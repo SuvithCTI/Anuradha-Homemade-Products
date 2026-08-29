@@ -39,6 +39,7 @@ public class EmailService {
                 fullName, verificationLink
         );
 
+        logger.info(">>> VERIFICATION LINK GENERATED FOR {}: {}", toEmail, verificationLink);
         sendEmail(toEmail, subject, body);
     }
 
