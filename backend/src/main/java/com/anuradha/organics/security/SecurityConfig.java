@@ -113,12 +113,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Allow the configured frontend origin
-        if (frontendUrl != null && !frontendUrl.isEmpty() && !frontendUrl.equals("/")) {
-            configuration.setAllowedOrigins(List.of(frontendUrl));
-        } else {
-            configuration.setAllowedOrigins(List.of("http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:8080"));
-        }
+        configuration.setAllowedOrigins(List.of(
+                "https://anuradha-homemade-products.vercel.app",
+                "http://localhost:5500",
+                "http://127.0.0.1:5500",
+                "http://localhost:8080",
+                "http://127.0.0.1:8080"
+        ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));

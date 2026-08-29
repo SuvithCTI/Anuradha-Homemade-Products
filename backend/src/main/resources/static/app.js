@@ -5,6 +5,10 @@ let currentFilter = 'all';
 let searchQuery = '';
 let currentSort = 'default';
 let activeReviewIndex = 0;
+const BACKEND_API_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+  ? (window.location.port === "8080" ? "" : "http://localhost:8080")
+  : "https://anuradha-homemade-products.onrender.com";
+
 let isAuthenticated = false;
 
 // Default reviews if none exist in LocalStorage
@@ -50,9 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function checkAuthStatus() {
-  const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
   try {
-    const response = await fetch(`${backendUrl}/api/auth/me`);
+    const response = await fetch(`${BACKEND_API_URL}/api/auth/me`);
     if (response.ok) {
       isAuthenticated = true;
       // Update profile button link to go to dashboard instead of login
@@ -283,9 +286,8 @@ function setupEventListeners() {
       const input = form.querySelector('input[type="email"]');
       if (!input || !input.value.trim()) return;
       const email = input.value.trim();
-      const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
       try {
-        const response = await fetch(`${backendUrl}/api/newsletter/subscribe`, {
+        const response = await fetch(`${BACKEND_API_URL}/api/newsletter/subscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
@@ -1309,9 +1311,8 @@ async function handleReviewSubmit(e) {
   renderReviews();
 
   // Send and save to MySQL database
-  const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
   try {
-    await fetch(`${backendUrl}/api/feedbacks`, {
+    await fetch(`${BACKEND_API_URL}/api/feedbacks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, location, rating, comment: text })
@@ -1377,9 +1378,8 @@ async function handleContactSubmit(e) {
   }
 
   // Submit to MySQL backend
-  const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
   try {
-    const response = await fetch(`${backendUrl}/api/enquiries`, {
+    const response = await fetch(`${BACKEND_API_URL}/api/enquiries`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, phone, email, message })

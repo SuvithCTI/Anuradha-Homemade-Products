@@ -1,4 +1,6 @@
-const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
+const backendUrl = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    ? (window.location.port === "8080" ? "" : "http://localhost:8080")
+    : "https://anuradha-homemade-products.onrender.com";
 
 document.addEventListener("DOMContentLoaded", () => {
     const signupForm = document.getElementById("signup-form");
