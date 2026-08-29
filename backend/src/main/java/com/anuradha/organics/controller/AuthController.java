@@ -111,6 +111,21 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/instant-verify")
+    public ResponseEntity<AuthResponse> instantVerify(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, "Email is required."));
+        }
+
+        try {
+            String message = authService.instantVerifyUser(email);
+            return ResponseEntity.ok(new AuthResponse(true, message));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, e.getMessage()));
+        }
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<AuthResponse> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");

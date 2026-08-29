@@ -129,6 +129,15 @@ public class AuthService {
     }
 
     @Transactional
+    public String instantVerifyUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("No account found with this email."));
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        return "Account activated successfully!";
+    }
+
+    @Transactional
     public String resendVerificationEmail(String email) {
         Optional<User> userOptional = userRepository.findByEmail(email);
         

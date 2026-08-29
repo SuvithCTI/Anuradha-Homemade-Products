@@ -72,8 +72,9 @@ public class SecurityConfig {
                 // Public REST API endpoints
                 .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/verify-email", 
                                  "/api/auth/check-verification", "/api/auth/resend-verification", 
-                                 "/api/auth/forgot-password", "/api/auth/reset-password", 
-                                 "/api/auth/logout", "/api/enquiries/**", "/api/feedbacks/**", 
+                                 "/api/auth/instant-verify", "/api/auth/forgot-password", 
+                                 "/api/auth/reset-password", "/api/auth/logout", 
+                                 "/api/enquiries/**", "/api/feedbacks/**", 
                                  "/api/newsletter/**", "/error").permitAll()
                 // Public static files
                 .requestMatchers("/", "/index.html", "/login.html", "/signup.html", 

@@ -56,6 +56,41 @@ document.addEventListener("DOMContentLoaded", () => {
     // Poll the status every 3 seconds (3000 milliseconds)
     const pollingInterval = setInterval(checkVerificationStatus, 3000);
 
+    const btnInstantVerify = document.getElementById("btn-instant-verify");
+    if (btnInstantVerify) {
+        btnInstantVerify.addEventListener("click", async () => {
+            btnInstantVerify.disabled = true;
+            hideAlert();
+            showAlert("success", "Activating your account...");
+
+            try {
+                const response = await fetch(`${backendUrl}/api/auth/instant-verify`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert("success", "Account activated! Redirecting to login...");
+                    setTimeout(() => {
+                        window.location.href = "login.html?verified=true";
+                    }, 1200);
+                } else {
+                    showAlert("error", data.message || "Activation failed.");
+                    btnInstantVerify.disabled = false;
+                }
+            } catch (err) {
+                showAlert("error", "Network error. Please try again.");
+                btnInstantVerify.disabled = false;
+            }
+        });
+    }
+
     // Resend verification email click handler
     btnResend.addEventListener("click", async () => {
         setLoading(true);
