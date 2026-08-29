@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - Anuradha Homemade Organics</title>
+    <link rel="stylesheet" href="css/auth.css">
+    <style>
+        .pending-box {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .status-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(76, 140, 43, 0.1);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px 0;
+        }
+        .status-text {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .email-highlight {
+            font-weight: bold;
+            color: var(--text-color);
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="brand-header">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <h1 class="brand-name">Anuradha Homemade Organics</h1>
+            <p class="brand-tagline">Fresh. Organic. Natural.</p>
+        </div>
+
+        <div class="auth-card">
+            <h2 class="auth-title">Verify Your Email</h2>
+            
+            <!-- Success/Error Messages -->
+            <div id="alert-box" class="alert">
+                <span id="alert-text"></span>
+            </div>
+
+            <div class="pending-box">
+                <p>We sent a verification email to:<br><span class="email-highlight" id="registered-email">your-email@example.com</span></p>
+                
+                <!-- Status Spinner -->
+                <div class="status-spinner"></div>
+                <div class="status-text" id="status-message">Waiting for email confirmation...</div>
+                
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 15px;">
+                    Please open your inbox (and check your **Spam** or **Promotions** folder) and click the verification link to activate your account. This page will automatically redirect once confirmed.
+                </p>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <!-- Resend Button -->
+                <button type="button" id="btn-resend" class="btn btn-primary" style="background-color: var(--accent-color); margin-bottom: 15px;">
+                    <span class="btn-text">Resend Verification Email</span>
+                    <span class="spinner"></span>
+                </button>
+            </div>
+
+            <!-- Sign In Switcher -->
+            <div class="auth-footer">
+                Want to use another account? <a href="login.html">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/verify-pending.js"></script>
+</body>
+</html>
