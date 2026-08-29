@@ -20,6 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("verified")) {
         showAlert("success", "Email verified successfully. You can now sign in.");
+    } else if (urlParams.has("registered")) {
+        showAlert("success", "Account created successfully! Please sign in.");
     } else if (urlParams.has("error")) {
         showAlert("error", urlParams.get("error"));
     }

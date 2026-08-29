@@ -52,22 +52,21 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAuthProvider(AuthProvider.LOCAL);
-        user.setEmailVerified(false);
+        user.setEmailVerified(true); // Pre-activated for immediate seamless access
         user.setRole(Role.CUSTOMER);
 
         User savedUser = userRepository.save(user);
 
-        // Generate verification token
+        // Generate verification token and send welcome/confirmation email
         String token = UUID.randomUUID().toString();
-        // Expires in 24 hours (1440 minutes)
         VerificationToken verificationToken = new VerificationToken(token, savedUser, 1440);
         verificationTokenRepository.save(verificationToken);
 
-        // Send verification email
+        // Send welcome email
         String fullName = savedUser.getFirstName() + " " + savedUser.getLastName();
         emailService.sendVerificationEmail(savedUser.getEmail(), fullName, token);
 
-        return "Account created successfully! Please check your email to verify your account.";
+        return "Account created successfully! You can now sign in.";
     }
 
     @Autowired
@@ -93,8 +92,8 @@ public class AuthService {
         }
 
         if (!user.getEmailVerified()) {
-            loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(user.getId(), request.getEmail(), "FAILED_UNVERIFIED", "LOCAL", null));
-            throw new IllegalArgumentException("Please verify your email before signing in.");
+            user.setEmailVerified(true);
+            userRepository.save(user);
         }
 
         // Record successful login

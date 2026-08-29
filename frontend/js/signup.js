@@ -157,11 +157,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
 
             if (response.ok) {
-                sessionStorage.setItem("pendingEmail", email);
-                showAlert("success", "Registration successful! Redirecting to verification page...");
+                showAlert("success", "Account created successfully! Redirecting to login...");
                 setTimeout(() => {
-                    window.location.href = "verify-pending.html";
-                }, 1500);
+                    window.location.href = "login.html?registered=true";
+                }, 1200);
             } else {
                 showAlert("error", data.message || "Registration failed. Please try again.");
             }
