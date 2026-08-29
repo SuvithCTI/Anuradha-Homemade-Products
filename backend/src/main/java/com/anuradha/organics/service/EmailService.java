@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class EmailService {
@@ -15,13 +16,13 @@ public class EmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
-    @Value("${app.backend.url:http://localhost:8080}")
+    @Value("${app.backend.url:https://anuradha-homemade-products.onrender.com}")
     private String backendUrl;
 
-    @Value("${app.frontend.url:http://localhost:8080}")
+    @Value("${app.frontend.url:https://anuradha-homemade-products.vercel.app}")
     private String frontendUrl;
 
-    @Value("${spring.mail.username:noreply@anuradhaorganics.com}")
+    @Value("${spring.mail.username:suvithsuvi22@gmail.com}")
     private String fromEmail;
 
     public void sendVerificationEmail(String toEmail, String fullName, String token) {
@@ -42,7 +43,6 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String toEmail, String fullName, String token) {
-        // The reset link redirects to the frontend reset-password.html page with the token
         String resetLink = frontendUrl + "/reset-password.html?token=" + token;
 
         String subject = "Password Reset - Anuradha Homemade Organics";
@@ -61,24 +61,27 @@ public class EmailService {
     }
 
     private void sendEmail(String toEmail, String subject, String body) {
-        try {
-            if (mailSender == null) {
-                throw new IllegalStateException("JavaMailSender is not initialized. Check SMTP configuration.");
+        // Run email dispatch asynchronously in a background thread so the HTTP request completes instantly
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (mailSender == null) {
+                    throw new IllegalStateException("JavaMailSender is not initialized. Check SMTP configuration.");
+                }
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(toEmail);
+                message.setSubject(subject);
+                message.setText(body);
+                mailSender.send(message);
+                logger.info("Email sent successfully to {}", toEmail);
+            } catch (Exception e) {
+                logger.warn("Could not send email to {} via SMTP (will log to console): {}", toEmail, e.getMessage());
+                logger.info("----- EMAIL CONSOLE LOG (BACKUP) -----");
+                logger.info("To: {}", toEmail);
+                logger.info("Subject: {}", subject);
+                logger.info("Body:\n{}", body);
+                logger.info("--------------------------------------");
             }
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(toEmail);
-            message.setSubject(subject);
-            message.setText(body);
-            mailSender.send(message);
-            logger.info("Email sent successfully to {}", toEmail);
-        } catch (Exception e) {
-            logger.error("Could not send email to {} due to error: {}", toEmail, e.getMessage());
-            logger.info("----- EMAIL CONSOLE LOG (DEVELOPMENT BACKUP) -----");
-            logger.info("To: {}", toEmail);
-            logger.info("Subject: {}", subject);
-            logger.info("Body:\n{}", body);
-            logger.info("--------------------------------------------------");
-        }
+        });
     }
 }
