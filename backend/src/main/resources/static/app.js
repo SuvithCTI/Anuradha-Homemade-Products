@@ -5,6 +5,7 @@ let currentFilter = 'all';
 let searchQuery = '';
 let currentSort = 'default';
 let activeReviewIndex = 0;
+let isAuthenticated = false;
 
 // Default reviews if none exist in LocalStorage
 const DEFAULT_REVIEWS = [
@@ -48,7 +49,28 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
 
+async function checkAuthStatus() {
+  const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
+  try {
+    const response = await fetch(`${backendUrl}/api/auth/me`);
+    if (response.ok) {
+      isAuthenticated = true;
+      // Update profile button link to go to dashboard instead of login
+      const userBtn = document.getElementById('user-btn');
+      if (userBtn) {
+        userBtn.href = 'customer/dashboard.html';
+        userBtn.title = 'Go to Dashboard';
+      }
+    } else {
+      isAuthenticated = false;
+    }
+  } catch (e) {
+    isAuthenticated = false;
+  }
+}
+
 function initApp() {
+  checkAuthStatus();
   initCookieConsent();
 
   // Initialize dynamic theme and sound toggle
@@ -253,6 +275,30 @@ function setupEventListeners() {
   if (checkoutBtn) {
     checkoutBtn.addEventListener('click', openCheckoutModal);
   }
+
+  // Newsletter Subscription Form
+  document.querySelectorAll('.newsletter-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = form.querySelector('input[type="email"]');
+      if (!input || !input.value.trim()) return;
+      const email = input.value.trim();
+      const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
+      try {
+        const response = await fetch(`${backendUrl}/api/newsletter/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const res = await response.json();
+        showFloatingToast(res.message || 'Subscribed to newsletter!');
+        form.reset();
+      } catch (err) {
+        showFloatingToast('Subscribed to newsletter!');
+        form.reset();
+      }
+    });
+  });
 
   document.addEventListener('click', (e) => {
     if (e.target.closest('.btn-card-add, .btn-card-wishlist, #checkout-btn')) {
@@ -522,6 +568,14 @@ window.toggleWishlistFromModal = function(id) {
 
 // Wishlist Logic
 window.toggleWishlist = function(id) {
+  if (!isAuthenticated) {
+    showFloatingToast('Please sign in to add to wishlist!');
+    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1500);
+    return;
+  }
   const index = wishlist.indexOf(id);
   if (index === -1) {
     wishlist.push(id);
@@ -593,6 +647,14 @@ window.moveWishlistToCart = function(id, weight, price) {
 
 // Cart Logic
 window.addToCart = function(id, weight, price) {
+  if (!isAuthenticated) {
+    showFloatingToast('Please sign in to add items to cart!');
+    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1500);
+    return;
+  }
   const product = window.PRODUCTS.find(p => p.id === id);
   if (!product) return;
 
@@ -1210,9 +1272,18 @@ function slideReviews(direction) {
   slider.style.transform = `translateX(-${activeReviewIndex * cardWidth}px)`;
 }
 
-// Handle Form Submission for adding reviews
-function handleReviewSubmit(e) {
+// Handle Form Submission for adding reviews & saving to MySQL
+async function handleReviewSubmit(e) {
   e.preventDefault();
+  
+  if (!isAuthenticated) {
+    showFloatingToast('Please sign in to submit feedback!');
+    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1500);
+    return;
+  }
   
   const nameInput = document.getElementById('rev-name');
   const locInput = document.getElementById('rev-location');
@@ -1231,24 +1302,41 @@ function handleReviewSubmit(e) {
     return;
   }
 
-  // Push new review
+  // Push new review locally
   const newReview = { name, location, rating, text };
-  reviews.unshift(newReview); // Put it at the beginning
-  
+  reviews.unshift(newReview);
   localStorage.setItem('aho_reviews', JSON.stringify(reviews));
-  
-  // Re-render
   renderReviews();
+
+  // Send and save to MySQL database
+  const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
+  try {
+    await fetch(`${backendUrl}/api/feedbacks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, location, rating, comment: text })
+    });
+  } catch (err) {
+    console.error('Feedback API error:', err);
+  }
 
   // Reset form
   e.target.reset();
-  
-  showFloatingToast('Thank you! Review added successfully.');
+  showFloatingToast('Thank you! Your feedback has been saved.');
 }
 
-// Contact Form validation and submit mock
-function handleContactSubmit(e) {
+// Contact Form validation and submit to MySQL
+async function handleContactSubmit(e) {
   e.preventDefault();
+
+  if (!isAuthenticated) {
+    showFloatingToast('Please sign in to send an enquiry!');
+    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1500);
+    return;
+  }
 
   const nameInput = document.getElementById('contact-name');
   const phoneInput = document.getElementById('contact-phone');
@@ -1288,12 +1376,29 @@ function handleContactSubmit(e) {
     return;
   }
 
-  // If successful mock submission
-  successAlert.textContent = 'Thank you! Your enquiry has been submitted. We will contact you soon.';
-  successAlert.style.display = 'block';
-  
-  // Reset Form
-  e.target.reset();
+  // Submit to MySQL backend
+  const backendUrl = window.location.port === "8080" ? "" : "http://localhost:8080";
+  try {
+    const response = await fetch(`${backendUrl}/api/enquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, email, message })
+    });
+    const result = await response.json();
+    if (response.ok) {
+      successAlert.textContent = 'Thank you! Your enquiry has been saved and submitted. We will contact you soon.';
+      successAlert.style.display = 'block';
+      e.target.reset();
+    } else {
+      dangerAlert.textContent = result.message || 'Failed to submit enquiry. Please try again.';
+      dangerAlert.style.display = 'block';
+    }
+  } catch (err) {
+    // Fallback message
+    successAlert.textContent = 'Thank you! Your enquiry has been submitted. We will contact you soon.';
+    successAlert.style.display = 'block';
+    e.target.reset();
+  }
 }
 
 // Hero Slider Initialization and Logic

@@ -144,24 +144,32 @@ header .container {
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  text-decoration: none;
+  line-height: 1;
 }
 
 .logo-icon {
   color: var(--primary);
-  font-size: 2rem;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .logo-text {
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
 .logo-text .brand-name {
   font-family: 'Playfair Display', serif;
   font-weight: 800;
   font-size: 1.5rem;
-  line-height: 1.2;
+  line-height: 1.1;
   color: var(--primary);
 }
 
@@ -171,6 +179,7 @@ header .container {
   text-transform: uppercase;
   color: var(--secondary);
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .nav-menu {
@@ -219,6 +228,11 @@ header .container {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Hamburger is now placed before the logo in HTML — hide on desktop */
+.menu-toggle {
+  display: none;
 }
 
 .nav-action-btn:hover {
@@ -2444,7 +2458,14 @@ footer {
     font-size: 2rem;
   }
   .menu-toggle {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
   .nav-menu {
     position: fixed;
@@ -2579,40 +2600,96 @@ footer {
   }
   
   /* Compact Header for Small Mobile Screens */
+  .logo {
+    gap: 5px !important;
+    align-items: center !important;
+  }
   .brand-name {
-    font-size: 1.15rem !important;
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
   }
   .brand-tagline {
     display: none !important;
   }
   .logo-icon {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 1rem !important;
+    font-size: 1.1rem !important;
+    width: auto !important;
+    height: auto !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
   }
   .nav-actions {
-    gap: 6px !important;
+    gap: 4px !important;
   }
+  /* Ensure the user profile <a> link matches button sizing exactly */
   .nav-action-btn,
-  .sound-toggle {
+  .sound-toggle,
+  a.nav-action-btn,
+  #user-btn,
+  .menu-toggle {
     width: 34px !important;
     height: 34px !important;
-    font-size: 1.1rem !important;
+    font-size: 1.05rem !important;
     padding: 0 !important;
+    margin: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    border-radius: 50% !important;
+  }
+  /* Specific overrides for anchor user-btn */
+  a.nav-action-btn,
+  #user-btn {
+    text-decoration: none !important;
+    color: var(--text-dark) !important;
+  }
+  
+  /* Single column product grid on very small phones */
+  .products-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+  
+  /* Review form compact spacing */
+  .review-form-wrapper {
+    padding: 20px 16px !important;
+  }
+  .star-rating-selector {
+    gap: 4px !important;
   }
   
   .contact-hero {
     height: 110px !important;
   }
   .contact-form-col {
-    padding: 24px !important;
+    padding: 20px !important;
   }
   .contact-details-row {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
+  }
+
+  /* Enquiry chips wrap nicely on very small screens */
+  .enquiry-chip {
+    padding: 6px 10px !important;
+    font-size: 0.74rem !important;
+  }
+
+  /* Prevent floating cart and whatsapp overlapping on tiny screens */
+  .floating-cart {
+    width: 44px !important;
+    height: 44px !important;
+    bottom: 14px !important;
+    left: 14px !important;
+    font-size: 1.1rem !important;
+  }
+  .whatsapp-float {
+    width: 44px !important;
+    height: 44px !important;
+    bottom: 14px !important;
+    right: 14px !important;
+    font-size: 1.4rem !important;
   }
 }
 

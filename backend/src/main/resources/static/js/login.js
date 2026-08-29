@@ -102,7 +102,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.ok) {
                 showAlert("success", "Login successful. Redirecting...");
                 setTimeout(() => {
-                    window.location.href = "customer/dashboard.html";
+                    const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+                    if (redirectUrl) {
+                        sessionStorage.removeItem('redirectAfterLogin');
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.href = "customer/dashboard.html";
+                    }
                 }, 1500);
             } else {
                 showAlert("error", data.message || "Invalid email or password.");

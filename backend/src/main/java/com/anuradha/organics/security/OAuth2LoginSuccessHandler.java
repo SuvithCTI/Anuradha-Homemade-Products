@@ -26,6 +26,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    private com.anuradha.organics.repository.LoginLogRepository loginLogRepository;
+
     @Value("${app.frontend.url:http://localhost:8080}")
     private String frontendUrl;
 
@@ -88,7 +91,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             userRepository.save(user);
         }
 
-        // Generate JWT cookie
+        // Log successful Google login
+        loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(user.getId(), user.getEmail(), "SUCCESS", "GOOGLE", request.getRemoteAddr()));
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(user.getEmail());
         
         // Add cookie to response header

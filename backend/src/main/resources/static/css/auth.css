@@ -33,11 +33,22 @@ body {
     color: var(--text-dark);
     line-height: 1.6;
     min-height: 100vh;
+    min-height: -webkit-fill-available; /* iOS Safari height fix */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     padding: 20px;
+    /* Safe area support for notched phones */
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+/* iOS Safari doesn't support background-attachment: fixed — use scroll instead */
+@supports (-webkit-touch-callout: none) {
+    body {
+        background-attachment: scroll;
+    }
 }
 
 .auth-container {
@@ -450,6 +461,22 @@ body {
 }
 
 /* Responsive adjustment */
+
+/* Tablet: centre and size the card nicely */
+@media (max-width: 768px) {
+    .auth-container {
+        max-width: 420px;
+    }
+    .auth-card {
+        padding: 18px 22px;
+    }
+    /* Ensure inputs have minimum 44px touch target height */
+    .form-input,
+    .btn {
+        min-height: 44px;
+    }
+}
+
 @media (max-width: 480px) {
     body {
         padding: 8px;

@@ -70,21 +70,35 @@ public class AuthService {
         return "Account created successfully! Please check your email to verify your account.";
     }
 
+    @Autowired
+    private com.anuradha.organics.repository.LoginLogRepository loginLogRepository;
+
     public User authenticateUser(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
+        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
+        if (userOpt.isEmpty()) {
+            loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(null, request.getEmail(), "FAILED", "LOCAL", null));
+            throw new IllegalArgumentException("Invalid email or password.");
+        }
+
+        User user = userOpt.get();
 
         if (user.getAuthProvider() != AuthProvider.LOCAL) {
+            loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(user.getId(), request.getEmail(), "FAILED_GOOGLE_ACC", "LOCAL", null));
             throw new IllegalArgumentException("This account is registered via Google. Please sign in with Google.");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(user.getId(), request.getEmail(), "FAILED_BAD_PASSWORD", "LOCAL", null));
             throw new IllegalArgumentException("Invalid email or password.");
         }
 
         if (!user.getEmailVerified()) {
+            loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(user.getId(), request.getEmail(), "FAILED_UNVERIFIED", "LOCAL", null));
             throw new IllegalArgumentException("Please verify your email before signing in.");
         }
+
+        // Record successful login
+        loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(user.getId(), user.getEmail(), "SUCCESS", "LOCAL", null));
 
         // Manually place in security context
         UserDetails userDetails = new UserDetailsImpl(user);

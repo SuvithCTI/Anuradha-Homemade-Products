@@ -73,7 +73,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/verify-email", 
                                  "/api/auth/check-verification", "/api/auth/resend-verification", 
                                  "/api/auth/forgot-password", "/api/auth/reset-password", 
-                                 "/api/auth/logout", "/error").permitAll()
+                                 "/api/auth/logout", "/api/enquiries/**", "/api/feedbacks/**", 
+                                 "/api/newsletter/**", "/error").permitAll()
                 // Public static files
                 .requestMatchers("/", "/index.html", "/login.html", "/signup.html", 
                                  "/about.html", "/contact.html", "/gallery.html", "/shop.html",
