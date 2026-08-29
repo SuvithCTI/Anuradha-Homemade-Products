@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - Anuradha Homemade Organics</title>
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+    <div class="auth-container" style="max-width: 600px;">
+        <div class="brand-header">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <h1 class="brand-name">Anuradha Homemade Organics</h1>
+            <p class="brand-tagline">Customer Dashboard</p>
+        </div>
+
+        <div class="auth-card welcome-card">
+            <h1>Welcome, <span id="user-display-name">Customer</span>!</h1>
+            <p>You have successfully logged into your account. Here are your account profile details:</p>
+            
+            <!-- Success/Error Messages -->
+            <div id="alert-box" class="alert">
+                <span id="alert-text"></span>
+            </div>
+
+            <!-- Profile details -->
+            <div class="profile-details">
+                <div class="profile-item">
+                    <div class="profile-label">Customer ID:</div>
+                    <div class="profile-value" id="profile-id">-</div>
+                </div>
+                <div class="profile-item">
+                    <div class="profile-label">First Name:</div>
+                    <div class="profile-value" id="profile-first">-</div>
+                </div>
+                <div class="profile-item">
+                    <div class="profile-label">Last Name:</div>
+                    <div class="profile-value" id="profile-last">-</div>
+                </div>
+                <div class="profile-item">
+                    <div class="profile-label">Email Address:</div>
+                    <div class="profile-value" id="profile-email">-</div>
+                </div>
+                <div class="profile-item">
+                    <div class="profile-label">Account Role:</div>
+                    <div class="profile-value" id="profile-role">-</div>
+                </div>
+                <div class="profile-item">
+                    <div class="profile-label">Verified Email:</div>
+                    <div class="profile-value" id="profile-verified">-</div>
+                </div>
+            </div>
+
+            <!-- Logout Button -->
+            <button type="button" id="btn-logout" class="btn btn-primary" style="background-color: var(--accent-color);">
+                <span class="btn-text">Sign Out</span>
+                <span class="spinner"></span>
+            </button>
+        </div>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
