@@ -109,6 +109,14 @@ function initApp() {
   // Apply reveal classes and setup IntersectionObserver
   applyRevealClasses();
   initScrollReveal();
+
+  // Check URL params for verified confirmation
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('verified')) {
+    setTimeout(() => {
+      showFloatingToast('🎉 Email verified successfully! Welcome to Anuradha Homemade Organics.');
+    }, 800);
+  }
 }
 
 function initCookieConsent() {
