@@ -2402,57 +2402,90 @@ footer {
   section {
     padding: 60px 0;
   }
+  .filter-chip {
+    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+  }
   .products-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .product-card {
+    border-radius: var(--radius-sm);
   }
   .product-card-body {
-    padding: 12px;
+    padding: 8px 10px !important;
   }
   .product-image-container {
-    height: auto;
+    height: 140px !important;
     aspect-ratio: 1 / 1;
   }
+  .product-card-badge {
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
+    bottom: 6px !important;
+    left: 6px !important;
+  }
   .product-card-rating {
-    gap: 3px;
-    margin-bottom: 5px;
+    gap: 2px !important;
+    margin-bottom: 3px !important;
   }
   .product-card-rating i {
-    font-size: 0.72rem;
+    font-size: 0.65rem !important;
   }
-  .product-card-rating span,
-  .product-card-desc,
-  .product-card-weight {
-    font-size: 0.7rem;
+  .product-card-rating span {
+    font-size: 0.65rem !important;
   }
   .product-card-title {
-    font-size: 0.92rem;
-    margin-bottom: 5px;
+    font-size: 0.84rem !important;
+    margin-bottom: 4px !important;
+    line-height: 1.25 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 2.1em;
   }
   .product-card-desc {
-    margin-bottom: 10px;
-    height: 2.8em;
+    display: none !important;
   }
   .product-card-footer {
-    gap: 8px;
+    gap: 6px !important;
+    margin-top: auto !important;
   }
   .product-card-price {
-    font-size: 1rem;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
   }
   .product-card-weight {
-    padding: 2px 5px;
+    font-size: 0.65rem !important;
+    padding: 1px 5px !important;
   }
   .product-card-actions {
-    gap: 4px;
+    display: grid !important;
+    grid-template-columns: 1.6fr 1fr 1fr !important;
+    gap: 4px !important;
   }
   .btn-card-add {
-    padding: 8px 4px;
-    font-size: 0.72rem;
-    gap: 4px;
+    padding: 6px 4px !important;
+    font-size: 0.7rem !important;
+    gap: 3px !important;
+    border-radius: 4px !important;
   }
   .btn-card-wishlist,
-  .btn-card-details {
-    font-size: 0.82rem;
+  .btn-card-detail {
+    width: 100% !important;
+    height: 28px !important;
+    padding: 0 !important;
+    font-size: 0.75rem !important;
+    border-radius: 4px !important;
+  }
+  .modal-actions {
+    gap: 8px !important;
+  }
+  .modal-actions .btn {
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
   }
   .section-title h2 {
     font-size: 2rem;
@@ -2645,10 +2678,31 @@ footer {
     color: var(--text-dark) !important;
   }
   
-  /* Single column product grid on very small phones */
+  /* 2-column compact product grid on mobile phones */
   .products-grid {
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .product-image-container {
+    height: 125px !important;
+  }
+  .product-card-body {
+    padding: 6px 8px !important;
+  }
+  .product-card-title {
+    font-size: 0.8rem !important;
+  }
+  .product-card-price {
+    font-size: 0.88rem !important;
+  }
+  .btn-card-add {
+    font-size: 0.68rem !important;
+    padding: 5px 2px !important;
+  }
+  .btn-card-wishlist,
+  .btn-card-detail {
+    height: 26px !important;
+    font-size: 0.7rem !important;
   }
   
   /* Review form compact spacing */
