@@ -20,7 +20,7 @@ public class LoginLog {
     @Column(name = "login_time", nullable = false)
     private LocalDateTime loginTime;
 
-    @Column(name = "login_status", nullable = false, length = 20)
+    @Column(name = "login_status", nullable = false, length = 50)
     private String loginStatus; // SUCCESS or FAILED
 
     @Column(name = "auth_provider", length = 20)

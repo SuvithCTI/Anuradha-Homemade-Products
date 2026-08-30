@@ -144,8 +144,12 @@ public class AuthService {
             user.setEmailVerified(true);
             User savedUser = userRepository.save(user);
 
-            // Record login log
-            loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(savedUser.getId(), savedUser.getEmail(), "SUCCESS_EMAIL_VERIFIED", "LOCAL", null));
+            // Record login log safely
+            try {
+                loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(savedUser.getId(), savedUser.getEmail(), "SUCCESS_VERIFIED", "LOCAL", null));
+            } catch (Exception logEx) {
+                // Ignore log recording failures
+            }
 
             return savedUser;
         }
