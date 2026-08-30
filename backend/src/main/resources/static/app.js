@@ -54,8 +54,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function checkAuthStatus() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('token')) {
+    localStorage.setItem('auth_token', urlParams.get('token'));
+  }
+  const token = localStorage.getItem('auth_token');
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   try {
-    const response = await fetch(`${BACKEND_API_URL}/api/auth/me`);
+    const response = await fetch(`${BACKEND_API_URL}/api/auth/me`, {
+      credentials: 'include',
+      headers: headers
+    });
     if (response.ok) {
       isAuthenticated = true;
       // Update profile button link to go to dashboard instead of login

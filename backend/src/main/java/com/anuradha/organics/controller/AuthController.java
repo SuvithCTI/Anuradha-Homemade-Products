@@ -74,20 +74,30 @@ public class AuthController {
     @GetMapping("/verify-email")
     public ResponseEntity<Void> verifyEmail(@RequestParam("token") String token, HttpServletResponse response) {
         String redirectUrl = frontendUrl;
-        if (redirectUrl.equals("/") || redirectUrl.isEmpty()) {
-            redirectUrl = "";
+        if (redirectUrl == null || redirectUrl.equals("/") || redirectUrl.isEmpty()) {
+            redirectUrl = "https://anuradha-homemade-products.vercel.app";
         }
         
         try {
             User user = authService.verifyEmailAndGetUser(token);
-            ResponseCookie cookie = jwtUtils.generateJwtCookie(user.getEmail());
-            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+            String jwt = "";
+            try {
+                jwt = jwtUtils.generateTokenFromUsername(user.getEmail());
+                ResponseCookie cookie = jwtUtils.generateJwtCookie(user.getEmail());
+                response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+            } catch (Exception ignored) {}
+
+            String userName = (user != null && user.getFirstName() != null) ? user.getFirstName() : "Customer";
+            String target = redirectUrl + "/index.html?verified=true&user=" + URLEncoder.encode(userName, StandardCharsets.UTF_8);
+            if (jwt != null && !jwt.isEmpty()) {
+                target += "&token=" + jwt;
+            }
 
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(redirectUrl + "/index.html?verified=true&user=" + URLEncoder.encode(user.getFirstName(), StandardCharsets.UTF_8)))
+                    .location(URI.create(target))
                     .build();
-        } catch (IllegalArgumentException e) {
-            String errorMsg = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            String errorMsg = URLEncoder.encode(e.getMessage() != null ? e.getMessage() : "Verification failed. Please sign in.", StandardCharsets.UTF_8);
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(redirectUrl + "/login.html?error=" + errorMsg))
                     .build();
