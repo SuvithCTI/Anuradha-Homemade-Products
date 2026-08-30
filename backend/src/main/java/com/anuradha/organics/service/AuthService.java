@@ -129,24 +129,28 @@ public class AuthService {
 
     @Transactional
     public User verifyEmailAndGetUser(String token) {
-        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid verification token."));
-
-        if (verificationToken.isExpired()) {
-            throw new IllegalArgumentException("Verification token has expired. Please request a new one.");
+        if (token != null) {
+            token = token.trim();
         }
 
-        User user = verificationToken.getUser();
-        user.setEmailVerified(true);
-        User savedUser = userRepository.save(user);
+        Optional<VerificationToken> tokenOpt = verificationTokenRepository.findByToken(token);
+        if (tokenOpt.isPresent()) {
+            VerificationToken verificationToken = tokenOpt.get();
+            if (verificationToken.isExpired()) {
+                throw new IllegalArgumentException("Verification link has expired. Please request a new one.");
+            }
 
-        // Delete the token
-        verificationTokenRepository.delete(verificationToken);
+            User user = verificationToken.getUser();
+            user.setEmailVerified(true);
+            User savedUser = userRepository.save(user);
 
-        // Record login log
-        loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(savedUser.getId(), savedUser.getEmail(), "SUCCESS_EMAIL_VERIFIED", "LOCAL", null));
+            // Record login log
+            loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(savedUser.getId(), savedUser.getEmail(), "SUCCESS_EMAIL_VERIFIED", "LOCAL", null));
 
-        return savedUser;
+            return savedUser;
+        }
+
+        throw new IllegalArgumentException("Verification link is invalid or has already been used. Please sign in.");
     }
 
     @Transactional
