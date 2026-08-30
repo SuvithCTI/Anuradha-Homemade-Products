@@ -71,16 +71,20 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<Void> verifyEmail(@RequestParam("token") String token) {
+    public ResponseEntity<Void> verifyEmail(@RequestParam("token") String token, HttpServletResponse response) {
         String redirectUrl = frontendUrl;
         if (redirectUrl.equals("/") || redirectUrl.isEmpty()) {
             redirectUrl = "";
         }
         
         try {
-            authService.verifyEmail(token);
+            User user = authService.verifyEmailAndGetUser(token);
+            String jwt = jwtUtils.generateJwtToken(user.getEmail());
+            ResponseCookie cookie = jwtUtils.createJwtCookie(jwt);
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(redirectUrl + "/index.html?verified=true"))
+                    .location(URI.create(redirectUrl + "/index.html?verified=true&user=" + URLEncoder.encode(user.getFirstName(), StandardCharsets.UTF_8)))
                     .build();
         } catch (IllegalArgumentException e) {
             String errorMsg = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);

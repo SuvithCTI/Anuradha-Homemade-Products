@@ -113,8 +113,12 @@ function initApp() {
   // Check URL params for verified confirmation
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('verified')) {
+    const userParam = urlParams.get('user');
+    const msg = userParam 
+      ? `🎉 Welcome, ${userParam}! Your account is verified and ready.` 
+      : '🎉 Email verified successfully! Welcome to Anuradha Homemade Organics.';
     setTimeout(() => {
-      showFloatingToast('🎉 Email verified successfully! Welcome to Anuradha Homemade Organics.');
+      showFloatingToast(msg);
     }, 800);
   }
 }

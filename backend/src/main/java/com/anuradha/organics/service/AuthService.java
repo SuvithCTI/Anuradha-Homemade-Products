@@ -128,6 +128,28 @@ public class AuthService {
     }
 
     @Transactional
+    public User verifyEmailAndGetUser(String token) {
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid verification token."));
+
+        if (verificationToken.isExpired()) {
+            throw new IllegalArgumentException("Verification token has expired. Please request a new one.");
+        }
+
+        User user = verificationToken.getUser();
+        user.setEmailVerified(true);
+        User savedUser = userRepository.save(user);
+
+        // Delete the token
+        verificationTokenRepository.delete(verificationToken);
+
+        // Record login log
+        loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(savedUser.getId(), savedUser.getEmail(), "SUCCESS_EMAIL_VERIFIED", "LOCAL", null));
+
+        return savedUser;
+    }
+
+    @Transactional
     public String instantVerifyUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("No account found with this email."));
