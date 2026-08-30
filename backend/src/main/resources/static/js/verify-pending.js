@@ -38,14 +38,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     clearInterval(pollingInterval);
                     
                     // Show success status
-                    statusMessage.textContent = "Email confirmed! Redirecting...";
+                    statusMessage.textContent = "Email confirmed! Redirecting to Home Page...";
                     statusMessage.style.color = "var(--primary-color)";
-                    showAlert("success", "Email verified successfully! Opening login page...");
+                    showAlert("success", "Email verified successfully! Welcome to Anuradha Homemade Organics.");
                     
-                    // Redirect to login page after 2 seconds
+                    // Redirect to home page after 1.5 seconds
                     setTimeout(() => {
-                        window.location.href = "login.html?verified=true";
-                    }, 2000);
+                        window.location.href = "index.html?verified=true";
+                    }, 1500);
                 }
             }
         } catch (error) {

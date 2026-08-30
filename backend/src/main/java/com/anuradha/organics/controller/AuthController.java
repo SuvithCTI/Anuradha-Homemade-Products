@@ -80,7 +80,7 @@ public class AuthController {
         try {
             authService.verifyEmail(token);
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(redirectUrl + "/login.html?verified=true"))
+                    .location(URI.create(redirectUrl + "/index.html?verified=true"))
                     .build();
         } catch (IllegalArgumentException e) {
             String errorMsg = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);

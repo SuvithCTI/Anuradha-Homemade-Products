@@ -52,21 +52,21 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAuthProvider(AuthProvider.LOCAL);
-        user.setEmailVerified(true); // Pre-activated for immediate seamless access
+        user.setEmailVerified(false);
         user.setRole(Role.CUSTOMER);
 
         User savedUser = userRepository.save(user);
 
-        // Generate verification token and send welcome/confirmation email
+        // Generate verification token and send verification email
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = new VerificationToken(token, savedUser, 1440);
         verificationTokenRepository.save(verificationToken);
 
-        // Send welcome email
+        // Send verification email
         String fullName = savedUser.getFirstName() + " " + savedUser.getLastName();
         emailService.sendVerificationEmail(savedUser.getEmail(), fullName, token);
 
-        return "Account created successfully! You can now sign in.";
+        return "Account created successfully! Please check your email to verify your account.";
     }
 
     @Autowired
@@ -92,8 +92,8 @@ public class AuthService {
         }
 
         if (!user.getEmailVerified()) {
-            user.setEmailVerified(true);
-            userRepository.save(user);
+            loginLogRepository.save(new com.anuradha.organics.entity.LoginLog(user.getId(), request.getEmail(), "FAILED_UNVERIFIED", "LOCAL", null));
+            throw new IllegalArgumentException("Please verify your email before signing in. Check your inbox for the verification link.");
         }
 
         // Record successful login
@@ -161,9 +161,10 @@ public class AuthService {
             // Send verification email
             String fullName = user.getFirstName() + " " + user.getLastName();
             emailService.sendVerificationEmail(user.getEmail(), fullName, token);
+            return "A new verification link has been sent to your email!";
         }
 
-        return "If an account exists and is unverified, a verification link has been sent.";
+        throw new IllegalArgumentException("No account found with this email address.");
     }
 
     @Transactional
