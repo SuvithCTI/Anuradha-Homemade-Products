@@ -20,46 +20,62 @@
 
         <div class="auth-card welcome-card">
             <h1>Welcome, <span id="user-display-name">Customer</span>!</h1>
-            <p>You have successfully logged into your account. Here are your account profile details:</p>
+            <p>Manage your account profile details below:</p>
             
             <!-- Success/Error Messages -->
             <div id="alert-box" class="alert">
                 <span id="alert-text"></span>
             </div>
 
-            <!-- Profile details -->
-            <div class="profile-details">
-                <div class="profile-item">
-                    <div class="profile-label">Customer ID:</div>
-                    <div class="profile-value" id="profile-id">-</div>
+            <!-- Profile Edit Form -->
+            <form id="profile-form" style="text-align: left; margin-bottom: 20px;" novalidate>
+                <!-- First Name -->
+                <div class="form-group">
+                    <label for="profile-first" class="form-label">First Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="profile-first" class="form-input" placeholder="Enter first name" required>
+                    </div>
+                    <div id="first-name-error" class="validation-msg">First name is required.</div>
                 </div>
-                <div class="profile-item">
-                    <div class="profile-label">First Name:</div>
-                    <div class="profile-value" id="profile-first">-</div>
-                </div>
-                <div class="profile-item">
-                    <div class="profile-label">Last Name:</div>
-                    <div class="profile-value" id="profile-last">-</div>
-                </div>
-                <div class="profile-item">
-                    <div class="profile-label">Email Address:</div>
-                    <div class="profile-value" id="profile-email">-</div>
-                </div>
-                <div class="profile-item">
-                    <div class="profile-label">Account Role:</div>
-                    <div class="profile-value" id="profile-role">-</div>
-                </div>
-                <div class="profile-item">
-                    <div class="profile-label">Verified Email:</div>
-                    <div class="profile-value" id="profile-verified">-</div>
-                </div>
-            </div>
 
-            <!-- Logout Button -->
-            <button type="button" id="btn-logout" class="btn btn-primary" style="background-color: var(--accent-color);">
-                <span class="btn-text">Sign Out</span>
-                <span class="spinner"></span>
-            </button>
+                <!-- Last Name -->
+                <div class="form-group">
+                    <label for="profile-last" class="form-label">Last Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="profile-last" class="form-input" placeholder="Enter last name">
+                    </div>
+                </div>
+
+                <!-- Email Address (Read-only / Not Editable) -->
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="profile-email" class="form-label">Email Address</label>
+                        <span style="font-size: 11px; color: var(--text-light); font-weight: 500;">(Non-editable)</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="email" id="profile-email" class="form-input" disabled readonly style="background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; border-color: #e5e7eb;">
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <div style="margin-top: 20px;">
+                    <button type="submit" id="btn-save-profile" class="btn btn-primary" style="width: 100%;">
+                        <span class="btn-text">Save Changes</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Navigation & Sign Out Buttons -->
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <a href="../index.html" class="btn btn-secondary" style="flex: 1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-size: 14px; font-weight: 500; border-radius: 12px; height: 44px;">
+                    Back to Store
+                </a>
+                <button type="button" id="btn-logout" class="btn" style="flex: 1; background-color: var(--accent-color); color: #ffffff; height: 44px;">
+                    <span class="btn-text">Sign Out</span>
+                    <span class="spinner"></span>
+                </button>
+            </div>
         </div>
     </div>
 

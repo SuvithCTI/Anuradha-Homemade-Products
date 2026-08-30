@@ -9,4 +9,6 @@ import java.util.List;
 public interface LoginLogRepository extends JpaRepository<LoginLog, Long> {
     List<LoginLog> findByEmailOrderByLoginTimeDesc(String email);
     List<LoginLog> findAllByOrderByLoginTimeDesc();
+    void deleteByUserId(Long userId);
+    void deleteByEmail(String email);
 }

@@ -65,9 +65,15 @@
                 </p>
             </div>
 
-            <div style="margin-top: 25px;">
+            <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <!-- Instant Activate Button -->
+                <button type="button" id="btn-instant-verify" class="btn btn-primary" style="background-color: var(--primary-color);">
+                    <span class="btn-text">Activate Account Now</span>
+                    <span class="spinner"></span>
+                </button>
+
                 <!-- Resend Button -->
-                <button type="button" id="btn-resend" class="btn btn-primary" style="background-color: var(--primary-color); margin-bottom: 15px;">
+                <button type="button" id="btn-resend" class="btn btn-secondary" style="background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db;">
                     <span class="btn-text">Resend Verification Email</span>
                     <span class="spinner"></span>
                 </button>

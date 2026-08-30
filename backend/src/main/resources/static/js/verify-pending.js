@@ -56,6 +56,46 @@ document.addEventListener("DOMContentLoaded", () => {
     // Poll the status every 3 seconds (3000 milliseconds)
     const pollingInterval = setInterval(checkVerificationStatus, 3000);
 
+    const btnInstantVerify = document.getElementById("btn-instant-verify");
+
+    // Instant verify click handler
+    if (btnInstantVerify) {
+        btnInstantVerify.addEventListener("click", async () => {
+            setInstantLoading(true);
+            hideAlert();
+
+            try {
+                const response = await fetch(`${backendUrl}/api/auth/instant-verify`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    clearInterval(pollingInterval);
+                    statusMessage.textContent = "Account activated successfully! Redirecting...";
+                    statusMessage.style.color = "var(--primary-color)";
+                    showAlert("success", "Your account has been activated! Redirecting to Sign In...");
+                    setTimeout(() => {
+                        window.location.href = "login.html?verified=true";
+                    }, 1200);
+                } else {
+                    showAlert("error", data.message || "Failed to activate account.");
+                }
+            } catch (error) {
+                console.error("Instant verify error:", error);
+                showAlert("error", "Network connection failed. Please try again.");
+            } finally {
+                setInstantLoading(false);
+            }
+        });
+    }
+
     // Resend verification email click handler
     btnResend.addEventListener("click", async () => {
         setLoading(true);
@@ -107,6 +147,22 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             btnResend.disabled = false;
             btnText.textContent = "Resend Verification Email";
+            spinner.style.display = "none";
+        }
+    }
+
+    function setInstantLoading(isLoading) {
+        if (!btnInstantVerify) return;
+        const btnText = btnInstantVerify.querySelector(".btn-text");
+        const spinner = btnInstantVerify.querySelector(".spinner");
+
+        if (isLoading) {
+            btnInstantVerify.disabled = true;
+            btnText.textContent = "Activating...";
+            spinner.style.display = "inline-block";
+        } else {
+            btnInstantVerify.disabled = false;
+            btnText.textContent = "Activate Account Now";
             spinner.style.display = "none";
         }
     }

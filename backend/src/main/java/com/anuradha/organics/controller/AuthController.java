@@ -51,6 +51,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> authenticateUser(@Valid @RequestBody LoginRequest request) {
         try {
             User user = authService.authenticateUser(request);
+            String token = jwtUtils.generateTokenFromUsername(user.getEmail());
             ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(user.getEmail());
 
             AuthResponse.UserDto userDto = new AuthResponse.UserDto(
@@ -64,7 +65,7 @@ public class AuthController {
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                    .body(new AuthResponse(true, "Login successful.", userDto));
+                    .body(new AuthResponse(true, "Login successful.", userDto, token));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthResponse(false, e.getMessage()));
@@ -190,6 +191,34 @@ public class AuthController {
         );
 
         return ResponseEntity.ok(new AuthResponse(true, "Current user retrieved.", userDto));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<AuthResponse> updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody com.anuradha.organics.dto.UpdateProfileRequest request) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new AuthResponse(false, "Unauthorized: Please log in."));
+        }
+
+        try {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User user = authService.updateProfile(userDetails.getUsername(), request);
+
+            AuthResponse.UserDto userDto = new AuthResponse.UserDto(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.getEmailVerified()
+            );
+
+            return ResponseEntity.ok(new AuthResponse(true, "Profile updated successfully.", userDto));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, e.getMessage()));
+        }
     }
 
     @PostMapping("/logout")

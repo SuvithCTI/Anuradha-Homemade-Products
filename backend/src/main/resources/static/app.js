@@ -71,22 +71,76 @@ async function checkAuthStatus() {
     });
     if (response.ok) {
       isAuthenticated = true;
+      const data = await response.json();
+      if (data.user) {
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+      }
       // Update profile button link to go to dashboard instead of login
       const userBtn = document.getElementById('user-btn');
       if (userBtn) {
-        userBtn.href = 'customer/dashboard.html';
-        userBtn.title = 'Go to Dashboard';
+        if (data.user && data.user.role === 'ADMIN') {
+          userBtn.href = 'admin/dashboard.html';
+          userBtn.title = 'Admin Console';
+        } else {
+          userBtn.href = 'customer/dashboard.html';
+          userBtn.title = (data.user && data.user.firstName) ? `Dashboard (${data.user.firstName})` : 'Go to Dashboard';
+        }
       }
     } else {
       isAuthenticated = false;
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('currentUser');
+      }
     }
   } catch (e) {
     isAuthenticated = false;
   }
 }
 
+async function loadProductsFromBackend() {
+  try {
+    const res = await fetch(`${BACKEND_API_URL}/api/products`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        window.PRODUCTS = data.map(p => {
+          let sizes = [];
+          if (p.sizesJson) {
+            try { sizes = JSON.parse(p.sizesJson); } catch (e) { sizes = [{ weight: "Default", price: p.price }]; }
+          }
+          let benefits = [];
+          if (p.benefits) {
+            try { benefits = JSON.parse(p.benefits); } catch (e) { benefits = [p.benefits]; }
+          }
+          return {
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            rating: p.rating || 5.0,
+            reviewsCount: p.reviewsCount || 0,
+            image: p.image,
+            description: p.description || "",
+            ingredients: p.ingredients || "",
+            benefits: benefits,
+            sizes: sizes.length ? sizes : [{ weight: "Standard", price: p.price }],
+            inStock: p.inStock !== false,
+            featured: p.featured === true
+          };
+        });
+        renderProducts();
+        renderFeaturedProducts();
+      }
+    }
+  } catch (e) {
+    console.warn("Using default static product catalog", e);
+  }
+}
+
 function initApp() {
   checkAuthStatus();
+  loadProductsFromBackend();
   initCookieConsent();
 
   // Initialize dynamic theme and sound toggle

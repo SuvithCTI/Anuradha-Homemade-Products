@@ -136,13 +136,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
 
             if (response.ok) {
-                showAlert("success", data.message || "Password has been reset successfully. Redirecting to login...");
+                showAlert("success", data.message || "Password has been reset successfully! Redirecting to Home Page...");
                 resetForm.reset();
                 strengthMeter.style.display = "none";
                 strengthText.style.display = "none";
                 setTimeout(() => {
-                    window.location.href = "login.html";
-                }, 2000);
+                    window.location.href = "index.html";
+                }, 1500);
             } else {
                 showAlert("error", data.message || "Password reset failed. Token may be expired.");
                 setLoading(false);

@@ -74,6 +74,7 @@ public class SecurityConfig {
                                  "/api/auth/check-verification", "/api/auth/resend-verification", 
                                  "/api/auth/instant-verify", "/api/auth/forgot-password", 
                                  "/api/auth/reset-password", "/api/auth/logout", 
+                                 "/api/products/**",
                                  "/api/enquiries/**", "/api/feedbacks/**", 
                                  "/api/newsletter/**", "/error").permitAll()
                 // Public static files
@@ -83,9 +84,12 @@ public class SecurityConfig {
                                  "/verify-pending.html", "/forgot-password.html", "/reset-password.html",
                                  "/terms.html", "/privacy.html",
                                  "/customer/dashboard.html", // Allowed for static loading; guarded via JS fetch /me
+                                 "/admin/**", // Admin static files; guarded via JS fetch /me and role check
                                  "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                // Protected REST endpoints
-                .requestMatchers("/api/auth/me").authenticated()
+                // Protected Admin REST endpoints
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Protected User REST endpoints
+                .requestMatchers("/api/auth/me", "/api/auth/profile").authenticated()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

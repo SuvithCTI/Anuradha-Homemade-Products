@@ -106,18 +106,41 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
 
             if (response.ok) {
-                showAlert("success", "Login successful. Redirecting...");
-                setTimeout(() => {
-                    const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-                    if (redirectUrl) {
-                        sessionStorage.removeItem('redirectAfterLogin');
-                        window.location.href = redirectUrl;
-                    } else {
-                        window.location.href = "customer/dashboard.html";
-                    }
-                }, 1500);
+                if (data.token) {
+                    localStorage.setItem('auth_token', data.token);
+                }
+                if (data.user) {
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                }
+                if (data.user && data.user.role === 'ADMIN') {
+                    showAlert("success", "Admin authentication verified! Redirecting to Admin Dashboard...");
+                    setTimeout(() => {
+                        window.location.href = "admin/dashboard.html";
+                    }, 1000);
+                } else {
+                    showAlert("success", "Login successful. Redirecting to home page...");
+                    setTimeout(() => {
+                        const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+                        if (redirectUrl) {
+                            sessionStorage.removeItem('redirectAfterLogin');
+                            window.location.href = redirectUrl;
+                        } else {
+                            window.location.href = "index.html";
+                        }
+                    }, 1000);
+                }
             } else {
-                showAlert("error", data.message || "Invalid email or password.");
+                const errorMsg = data.message || "Invalid email or password.";
+                if (errorMsg.toLowerCase().includes("verify your email")) {
+                    sessionStorage.setItem("pendingEmail", email);
+                    showAlert("error", errorMsg);
+                    const verifyLink = document.createElement("div");
+                    verifyLink.style.marginTop = "8px";
+                    verifyLink.innerHTML = `<a href="verify-pending.html" style="color: #fff; text-decoration: underline; font-weight: bold;">Click here to Activate Account</a>`;
+                    alertBox.appendChild(verifyLink);
+                } else {
+                    showAlert("error", errorMsg);
+                }
                 setLoading(false);
             }
         } catch (error) {
@@ -141,6 +164,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function showAlert(type, message) {
         alertBox.className = `alert alert-${type}`;
         alertText.textContent = message;
+        // Remove extra child nodes if any
+        while (alertBox.children.length > 1) {
+            alertBox.removeChild(alertBox.lastChild);
+        }
         alertBox.style.display = "flex";
     }
 

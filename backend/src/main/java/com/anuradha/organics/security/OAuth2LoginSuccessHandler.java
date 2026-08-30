@@ -98,12 +98,13 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         // Add cookie to response header
         response.addHeader("Set-Cookie", jwtCookie.toString());
 
-        // Redirect to customer dashboard
+        // Redirect to home page with token
+        String jwtToken = jwtUtils.generateTokenFromUsername(user.getEmail());
         String redirectUrl = frontendUrl;
         if (redirectUrl.equals("/") || redirectUrl.isEmpty()) {
             redirectUrl = "";
         }
         
-        getRedirectStrategy().sendRedirect(request, response, redirectUrl + "/customer/dashboard.html");
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl + "/index.html?token=" + jwtToken);
     }
 }

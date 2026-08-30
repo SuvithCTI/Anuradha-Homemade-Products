@@ -252,6 +252,21 @@ public class AuthService {
         return "Password has been reset successfully. You can now login with your new password.";
     }
 
+    @Transactional
+    public User updateProfile(String email, com.anuradha.organics.dto.UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+
+        if (request.getFirstName() == null || request.getFirstName().trim().isEmpty()) {
+            throw new IllegalArgumentException("First name cannot be empty.");
+        }
+
+        user.setFirstName(request.getFirstName().trim());
+        user.setLastName(request.getLastName() != null ? request.getLastName().trim() : "");
+
+        return userRepository.save(user);
+    }
+
     public boolean isEmailVerified(String email) {
         return userRepository.findByEmail(email)
                 .map(User::getEmailVerified)
