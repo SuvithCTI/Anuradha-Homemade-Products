@@ -80,8 +80,7 @@ public class AuthController {
         
         try {
             User user = authService.verifyEmailAndGetUser(token);
-            String jwt = jwtUtils.generateJwtToken(user.getEmail());
-            ResponseCookie cookie = jwtUtils.createJwtCookie(jwt);
+            ResponseCookie cookie = jwtUtils.generateJwtCookie(user.getEmail());
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
             return ResponseEntity.status(HttpStatus.FOUND)
