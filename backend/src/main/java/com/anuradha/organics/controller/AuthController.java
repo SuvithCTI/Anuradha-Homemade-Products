@@ -161,6 +161,11 @@ public class AuthController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User user = userDetails.getUser();
 
+        if (!user.getEmailVerified()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new AuthResponse(false, "Unauthorized: Email not verified. Please verify your email."));
+        }
+
         AuthResponse.UserDto userDto = new AuthResponse.UserDto(
                 user.getId(),
                 user.getFirstName(),
