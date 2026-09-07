@@ -1,6 +1,7 @@
-const backendUrl = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-    ? (window.location.port === "8080" ? "" : "http://localhost:8080")
-    : "https://anuradha-homemade-products.onrender.com";
+/**
+ * Login Script - Standalone Client Authentication
+ * Anuradha Homemade Organic Products
+ */
 
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
@@ -16,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const alertBox = document.getElementById("alert-box");
     const alertText = document.getElementById("alert-text");
 
-    // Check query params for verification success/error redirects
+    // Check query params
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("verified")) {
         showAlert("success", "Email verified successfully. You can now sign in.");
@@ -42,83 +43,69 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     // Toggle Password Visibility
-    togglePasswordBtn.addEventListener("click", () => {
-        if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            togglePasswordBtn.innerHTML = eyeOffSvg;
-        } else {
-            passwordInput.type = "password";
-            togglePasswordBtn.innerHTML = eyeSvg;
-        }
-    });
+    if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener("click", () => {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                togglePasswordBtn.innerHTML = eyeOffSvg;
+            } else {
+                passwordInput.type = "password";
+                togglePasswordBtn.innerHTML = eyeSvg;
+            }
+        });
+    }
 
     // Form submission
-    loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        // Hide messages
-        hideAlert();
-        emailError.style.display = "none";
-        passwordError.style.display = "none";
-        emailInput.classList.remove("input-error");
-        passwordInput.classList.remove("input-error");
+    if (loginForm) {
+        loginForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            
+            // Hide messages
+            hideAlert();
+            if (emailError) emailError.style.display = "none";
+            if (passwordError) passwordError.style.display = "none";
+            if (emailInput) emailInput.classList.remove("input-error");
+            if (passwordInput) passwordInput.classList.remove("input-error");
 
-        // Validate
-        let isValid = true;
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
+            // Validate
+            let isValid = true;
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
 
-        if (!email) {
-            emailError.textContent = "Email is required.";
-            emailError.style.display = "block";
-            emailInput.classList.add("input-error");
-            isValid = false;
-        } else if (!validateEmail(email)) {
-            emailError.textContent = "Please enter a valid email address.";
-            emailError.style.display = "block";
-            emailInput.classList.add("input-error");
-            isValid = false;
-        }
-
-        if (!password) {
-            passwordError.textContent = "Password is required.";
-            passwordError.style.display = "block";
-            passwordInput.classList.add("input-error");
-            isValid = false;
-        }
-
-        if (!isValid) return;
-
-        // Loading state
-        setLoading(true);
-
-        try {
-            const response = await fetch(`${backendUrl}/api/auth/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({ email, password }),
-                credentials: "include" // crucial for HttpOnly cookies
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                if (data.token) {
-                    localStorage.setItem('auth_token', data.token);
+            if (!email) {
+                if (emailError) {
+                    emailError.textContent = "Email is required.";
+                    emailError.style.display = "block";
                 }
-                if (data.user) {
-                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                emailInput.classList.add("input-error");
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                if (emailError) {
+                    emailError.textContent = "Please enter a valid email address.";
+                    emailError.style.display = "block";
                 }
-                if (data.user && data.user.role === 'ADMIN') {
-                    showAlert("success", "Admin authentication verified! Redirecting to Admin Dashboard...");
-                    setTimeout(() => {
-                        window.location.href = "admin/dashboard.html";
-                    }, 1000);
-                } else {
-                    showAlert("success", "Login successful. Redirecting to home page...");
+                emailInput.classList.add("input-error");
+                isValid = false;
+            }
+
+            if (!password) {
+                if (passwordError) {
+                    passwordError.textContent = "Password is required.";
+                    passwordError.style.display = "block";
+                }
+                passwordInput.classList.add("input-error");
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            setLoading(true);
+
+            setTimeout(() => {
+                const res = window.StorageService ? window.StorageService.login(email, password) : { success: false, message: 'Storage service unavailable' };
+
+                if (res.success) {
+                    showAlert("success", "Login successful. Welcome back!");
                     setTimeout(() => {
                         const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
                         if (redirectUrl) {
@@ -127,34 +114,40 @@ document.addEventListener("DOMContentLoaded", () => {
                         } else {
                             window.location.href = "index.html";
                         }
-                    }, 1000);
-                }
-            } else {
-                const errorMsg = data.message || "Invalid email or password.";
-                if (errorMsg.toLowerCase().includes("verify your email")) {
-                    sessionStorage.setItem("pendingEmail", email);
-                    showAlert("error", errorMsg);
-                    const verifyLink = document.createElement("div");
-                    verifyLink.style.marginTop = "8px";
-                    verifyLink.innerHTML = `<a href="verify-pending.html" style="color: #fff; text-decoration: underline; font-weight: bold;">Click here to Activate Account</a>`;
-                    alertBox.appendChild(verifyLink);
+                    }, 600);
                 } else {
-                    showAlert("error", errorMsg);
+                    showAlert("error", res.message || "Invalid email or password.");
+                    setLoading(false);
                 }
-                setLoading(false);
-            }
-        } catch (error) {
-            console.error("Login request error", error);
-            showAlert("error", "Network connection failed. Please try again.");
-            setLoading(false);
-        }
-    });
+            }, 300);
+        });
+    }
 
-    // Google Sign-In redirect
-    btnGoogleLogin.addEventListener("click", () => {
-        // Redirect browser directly to backend Google OAuth initiation endpoint
-        window.location.href = `${backendUrl}/oauth2/authorization/google`;
-    });
+    // Google Sign-In Simulation
+    if (btnGoogleLogin) {
+        btnGoogleLogin.addEventListener("click", () => {
+            setLoading(true);
+            setTimeout(() => {
+                // Register/Login Demo Google Account
+                const googleUser = {
+                    firstName: "Google",
+                    lastName: "User",
+                    email: "customer@gmail.com",
+                    password: "GoogleAuth@123",
+                    authProvider: "GOOGLE",
+                    role: "CUSTOMER"
+                };
+                if (window.StorageService) {
+                    window.StorageService.register(googleUser);
+                    window.StorageService.login(googleUser.email, googleUser.password);
+                }
+                showAlert("success", "Google Sign-In successful! Redirecting...");
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 700);
+            }, 500);
+        });
+    }
 
     function validateEmail(email) {
         const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -162,33 +155,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function showAlert(type, message) {
+        if (!alertBox || !alertText) return;
         alertBox.className = `alert alert-${type}`;
         alertText.textContent = message;
-        // Remove extra child nodes if any
-        while (alertBox.children.length > 1) {
-            alertBox.removeChild(alertBox.lastChild);
-        }
         alertBox.style.display = "flex";
     }
 
     function hideAlert() {
-        alertBox.style.display = "none";
+        if (alertBox) alertBox.style.display = "none";
     }
 
     function setLoading(isLoading) {
+        if (!btnLogin) return;
         const btnText = btnLogin.querySelector(".btn-text");
         const spinner = btnLogin.querySelector(".spinner");
 
         if (isLoading) {
             btnLogin.disabled = true;
-            btnGoogleLogin.disabled = true;
-            btnText.textContent = "Signing in...";
-            spinner.style.display = "inline-block";
+            if (btnGoogleLogin) btnGoogleLogin.disabled = true;
+            if (btnText) btnText.textContent = "Signing in...";
+            if (spinner) spinner.style.display = "inline-block";
         } else {
             btnLogin.disabled = false;
-            btnGoogleLogin.disabled = false;
-            btnText.textContent = "Sign In";
-            spinner.style.display = "none";
+            if (btnGoogleLogin) btnGoogleLogin.disabled = false;
+            if (btnText) btnText.textContent = "Sign In";
+            if (spinner) spinner.style.display = "none";
         }
     }
 });

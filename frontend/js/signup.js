@@ -1,6 +1,7 @@
-const backendUrl = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-    ? (window.location.port === "8080" ? "" : "http://localhost:8080")
-    : "https://anuradha-homemade-products.onrender.com";
+/**
+ * Signup Script - Standalone Client Registration
+ * Anuradha Homemade Organic Products
+ */
 
 document.addEventListener("DOMContentLoaded", () => {
     const signupForm = document.getElementById("signup-form");
@@ -44,18 +45,20 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     // Toggle Password Visibility
-    togglePasswordBtn.addEventListener("click", () => {
-        if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            togglePasswordBtn.innerHTML = eyeOffSvg;
-        } else {
-            passwordInput.type = "password";
-            togglePasswordBtn.innerHTML = eyeSvg;
-        }
-    });
+    if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener("click", () => {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                togglePasswordBtn.innerHTML = eyeOffSvg;
+            } else {
+                passwordInput.type = "password";
+                togglePasswordBtn.innerHTML = eyeSvg;
+            }
+        });
+    }
 
     // Toggle Confirm Password Visibility
-    if (toggleConfirmBtn) {
+    if (toggleConfirmBtn && confirmInput) {
         toggleConfirmBtn.addEventListener("click", () => {
             if (confirmInput.type === "password") {
                 confirmInput.type = "text";
@@ -68,132 +71,133 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Password Strength Checker
-    passwordInput.addEventListener("input", () => {
-        const password = passwordInput.value;
-        if (!password) {
-            strengthMeter.style.display = "none";
-            strengthText.style.display = "none";
-            return;
-        }
+    if (passwordInput) {
+        passwordInput.addEventListener("input", () => {
+            const password = passwordInput.value;
+            if (!password) {
+                if (strengthMeter) strengthMeter.style.display = "none";
+                if (strengthText) strengthText.style.display = "none";
+                return;
+            }
 
-        strengthMeter.style.display = "block";
-        strengthText.style.display = "block";
+            if (strengthMeter) strengthMeter.style.display = "block";
+            if (strengthText) strengthText.style.display = "block";
 
-        const strength = checkPasswordStrength(password);
-        updateStrengthUI(strength);
-    });
+            const strength = checkPasswordStrength(password);
+            updateStrengthUI(strength);
+        });
+    }
 
     // Form submission
-    signupForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        // Reset warnings
-        hideAlert();
-        resetValidationErrors();
+    if (signupForm) {
+        signupForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            
+            // Reset warnings
+            hideAlert();
+            resetValidationErrors();
 
-        // Validation checks
-        let isValid = true;
-        const firstName = firstNameInput.value.trim();
-        const lastName = lastNameInput.value.trim();
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-        const confirmPassword = confirmInput.value;
-        const termsAccepted = termsCheckbox.checked;
+            // Validation checks
+            let isValid = true;
+            const firstName = firstNameInput.value.trim();
+            const lastName = lastNameInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const confirmPassword = confirmInput ? confirmInput.value : "";
+            const termsAccepted = termsCheckbox ? termsCheckbox.checked : true;
 
-        if (!firstName) {
-            showInputError(firstNameInput, firstNameError, "First name is required.");
-            isValid = false;
-        }
-
-        if (!lastName) {
-            showInputError(lastNameInput, lastNameError, "Last name is required.");
-            isValid = false;
-        }
-
-        if (!email) {
-            showInputError(emailInput, emailError, "Email is required.");
-            isValid = false;
-        } else if (!validateEmail(email)) {
-            showInputError(emailInput, emailError, "Please enter a valid email address.");
-            isValid = false;
-        }
-
-        if (!password) {
-            showInputError(passwordInput, passwordError, "Password is required.");
-            isValid = false;
-        } else if (password.length < 8) {
-            showInputError(passwordInput, passwordError, "Password must be at least 8 characters long.");
-            isValid = false;
-        }
-
-        if (!confirmPassword) {
-            showInputError(confirmInput, confirmError, "Please confirm your password.");
-            isValid = false;
-        } else if (password !== confirmPassword) {
-            showInputError(confirmInput, confirmError, "Passwords do not match.");
-            isValid = false;
-        }
-
-        if (!termsAccepted) {
-            termsError.style.display = "block";
-            isValid = false;
-        }
-
-        if (!isValid) return;
-
-        // Loading State
-        setLoading(true);
-
-        try {
-            const response = await fetch(`${backendUrl}/api/auth/signup`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({ firstName, lastName, email, password })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                sessionStorage.setItem("pendingEmail", email);
-                showAlert("success", "Registration successful! Please check your email to verify...");
-                setTimeout(() => {
-                    window.location.href = "verify-pending.html";
-                }, 1000);
-            } else {
-                showAlert("error", data.message || "Registration failed. Please try again.");
+            if (!firstName) {
+                showInputError(firstNameInput, firstNameError, "First name is required.");
+                isValid = false;
             }
-        } catch (error) {
-            console.error("Signup request error", error);
-            showAlert("error", "Network connection failed. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    });
 
-    // Google Sign-In redirect
-    btnGoogleSignup.addEventListener("click", () => {
-        window.location.href = `${backendUrl}/oauth2/authorization/google`;
-    });
+            if (!email) {
+                showInputError(emailInput, emailError, "Email is required.");
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                showInputError(emailInput, emailError, "Please enter a valid email address.");
+                isValid = false;
+            }
+
+            if (!password) {
+                showInputError(passwordInput, passwordError, "Password is required.");
+                isValid = false;
+            } else if (password.length < 6) {
+                showInputError(passwordInput, passwordError, "Password must be at least 6 characters long.");
+                isValid = false;
+            }
+
+            if (confirmInput && password !== confirmPassword) {
+                showInputError(confirmInput, confirmError, "Passwords do not match.");
+                isValid = false;
+            }
+
+            if (termsCheckbox && !termsAccepted) {
+                if (termsError) termsError.style.display = "block";
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            setLoading(true);
+
+            setTimeout(() => {
+                const res = window.StorageService ? window.StorageService.register({ firstName, lastName, email, password, role: 'CUSTOMER' }) : { success: false, message: 'Storage service unavailable' };
+
+                if (res.success) {
+                    showAlert("success", "Account created successfully! Redirecting to sign in...");
+                    setTimeout(() => {
+                        window.location.href = "login.html?registered=true";
+                    }, 800);
+                } else {
+                    showAlert("error", res.message || "Registration failed. Please try again.");
+                    setLoading(false);
+                }
+            }, 300);
+        });
+    }
+
+    // Google Sign-Up Simulation
+    if (btnGoogleSignup) {
+        btnGoogleSignup.addEventListener("click", () => {
+            setLoading(true);
+            setTimeout(() => {
+                const googleUser = {
+                    firstName: "Google",
+                    lastName: "Customer",
+                    email: "new.customer@gmail.com",
+                    password: "GoogleAuth@123",
+                    authProvider: "GOOGLE",
+                    role: "CUSTOMER"
+                };
+                if (window.StorageService) {
+                    window.StorageService.register(googleUser);
+                    window.StorageService.login(googleUser.email, googleUser.password);
+                }
+                showAlert("success", "Google account linked successfully! Redirecting...");
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 800);
+            }, 500);
+        });
+    }
 
     function validateEmail(email) {
         const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         return re.test(email);
     }
 
-    // Password strength check criteria
     function checkPasswordStrength(password) {
         let score = 0;
+        if (password.length >= 6) score++;
         if (password.length >= 8) score++;
-        if (/[A-Z]/.test(password)) score++;
         if (/[0-9]/.test(password)) score++;
         if (/[^A-Za-z0-9]/.test(password)) score++;
         return score;
     }
 
     function updateStrengthUI(score) {
+        if (!strengthBar || !strengthText) return;
         let width = "0%";
         let color = "var(--error-color)";
         let text = "Weak";
@@ -204,15 +208,15 @@ document.addEventListener("DOMContentLoaded", () => {
             text = "Weak";
         } else if (score === 2) {
             width = "50%";
-            color = "#f57c00"; // Orange
+            color = "#f57c00";
             text = "Medium";
         } else if (score === 3) {
             width = "75%";
-            color = "#fbc02d"; // Yellow
+            color = "#fbc02d";
             text = "Good";
-        } else if (score === 4) {
+        } else if (score >= 4) {
             width = "100%";
-            color = "var(--primary-color)"; // Green
+            color = "var(--primary-color)";
             text = "Strong";
         }
 
@@ -223,43 +227,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function showInputError(input, errorElement, message) {
-        input.classList.add("input-error");
-        errorElement.textContent = message;
-        errorElement.style.display = "block";
+        if (input) input.classList.add("input-error");
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = "block";
+        }
     }
 
     function resetValidationErrors() {
         const inputs = [firstNameInput, lastNameInput, emailInput, passwordInput, confirmInput];
-        inputs.forEach(input => input.classList.remove("input-error"));
+        inputs.forEach(input => { if (input) input.classList.remove("input-error"); });
 
         const errors = [firstNameError, lastNameError, emailError, passwordError, confirmError, termsError];
-        errors.forEach(err => err.style.display = "none");
+        errors.forEach(err => { if (err) err.style.display = "none"; });
     }
 
     function showAlert(type, message) {
+        if (!alertBox || !alertText) return;
         alertBox.className = `alert alert-${type}`;
         alertText.textContent = message;
         alertBox.style.display = "flex";
     }
 
     function hideAlert() {
-        alertBox.style.display = "none";
+        if (alertBox) alertBox.style.display = "none";
     }
 
     function setLoading(isLoading) {
+        if (!btnSignup) return;
         const btnText = btnSignup.querySelector(".btn-text");
         const spinner = btnSignup.querySelector(".spinner");
 
         if (isLoading) {
             btnSignup.disabled = true;
-            btnGoogleSignup.disabled = true;
-            btnText.textContent = "Creating account...";
-            spinner.style.display = "inline-block";
+            if (btnGoogleSignup) btnGoogleSignup.disabled = true;
+            if (btnText) btnText.textContent = "Creating account...";
+            if (spinner) spinner.style.display = "inline-block";
         } else {
             btnSignup.disabled = false;
-            btnGoogleSignup.disabled = false;
-            btnText.textContent = "Create Account";
-            spinner.style.display = "none";
+            if (btnGoogleSignup) btnGoogleSignup.disabled = false;
+            if (btnText) btnText.textContent = "Create Account";
+            if (spinner) spinner.style.display = "none";
         }
     }
 });

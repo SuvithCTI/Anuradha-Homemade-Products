@@ -1,6 +1,7 @@
-const backendUrl = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-    ? (window.location.port === "8080" ? "" : "http://localhost:8080")
-    : "https://anuradha-homemade-products.onrender.com";
+/**
+ * Forgot Password Script - Standalone Client
+ * Anuradha Homemade Organic Products
+ */
 
 document.addEventListener("DOMContentLoaded", () => {
     const forgotForm = document.getElementById("forgot-form");
@@ -10,53 +11,46 @@ document.addEventListener("DOMContentLoaded", () => {
     const alertBox = document.getElementById("alert-box");
     const alertText = document.getElementById("alert-text");
 
-    forgotForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        // Clear alerts
-        hideAlert();
-        emailError.style.display = "none";
-        emailInput.classList.remove("input-error");
+    if (forgotForm) {
+        forgotForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            
+            // Clear alerts
+            hideAlert();
+            if (emailError) emailError.style.display = "none";
+            if (emailInput) emailInput.classList.remove("input-error");
 
-        const email = emailInput.value.trim();
+            const email = emailInput.value.trim();
 
-        if (!email) {
-            emailInput.classList.add("input-error");
-            emailError.textContent = "Email is required.";
-            emailError.style.display = "block";
-            return;
-        } else if (!validateEmail(email)) {
-            emailInput.classList.add("input-error");
-            emailError.textContent = "Please enter a valid email address.";
-            emailError.style.display = "block";
-            return;
-        }
+            if (!email) {
+                if (emailInput) emailInput.classList.add("input-error");
+                if (emailError) {
+                    emailError.textContent = "Email is required.";
+                    emailError.style.display = "block";
+                }
+                return;
+            } else if (!validateEmail(email)) {
+                if (emailInput) emailInput.classList.add("input-error");
+                if (emailError) {
+                    emailError.textContent = "Please enter a valid email address.";
+                    emailError.style.display = "block";
+                }
+                return;
+            }
 
-        // Loading
-        setLoading(true);
+            setLoading(true);
 
-        try {
-            const response = await fetch(`${backendUrl}/api/auth/forgot-password`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({ email })
-            });
+            setTimeout(() => {
+                const token = "reset_" + Date.now();
+                sessionStorage.setItem("reset_email", email);
+                sessionStorage.setItem("reset_token", token);
 
-            const data = await response.json();
-
-            // Showing success regardless of email existence (standard security practice)
-            showAlert("success", data.message || "If an account exists with this email, a password reset link has been sent.");
-            forgotForm.reset();
-        } catch (error) {
-            console.error("Forgot password request error", error);
-            showAlert("error", "Network connection failed. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    });
+                showAlert("success", `Password reset link generated! <br><a href="reset-password.html?token=${token}&email=${encodeURIComponent(email)}" style="color: #fff; font-weight: bold; text-decoration: underline; display: inline-block; margin-top: 6px;">Click here to Reset Your Password</a>`);
+                forgotForm.reset();
+                setLoading(false);
+            }, 400);
+        });
+    }
 
     function validateEmail(email) {
         const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -64,27 +58,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function showAlert(type, message) {
+        if (!alertBox || !alertText) return;
         alertBox.className = `alert alert-${type}`;
-        alertText.textContent = message;
+        alertText.innerHTML = message;
         alertBox.style.display = "flex";
     }
 
     function hideAlert() {
-        alertBox.style.display = "none";
+        if (alertBox) alertBox.style.display = "none";
     }
 
     function setLoading(isLoading) {
+        if (!btnForgot) return;
         const btnText = btnForgot.querySelector(".btn-text");
         const spinner = btnForgot.querySelector(".spinner");
 
         if (isLoading) {
             btnForgot.disabled = true;
-            btnText.textContent = "Sending reset email...";
-            spinner.style.display = "inline-block";
+            if (btnText) btnText.textContent = "Generating link...";
+            if (spinner) spinner.style.display = "inline-block";
         } else {
             btnForgot.disabled = false;
-            btnText.textContent = "Send Reset Link";
-            spinner.style.display = "none";
+            if (btnText) btnText.textContent = "Send Reset Link";
+            if (spinner) spinner.style.display = "none";
         }
     }
 });

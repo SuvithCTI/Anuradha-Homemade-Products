@@ -1,36 +1,64 @@
+/**
+ * Products Definition & Fallback Catalogue
+ * Anuradha Homemade Organic Products
+ */
+
 const PRODUCTS = [
   {
     id: "amla-powder",
     name: "Pure Organic Amla Powder",
     category: "amla-products",
-    price: 180,
+    price: 100,
     rating: 4.8,
     reviewsCount: 42,
-    image: "images/amla-powder-v3.jpg",
-    description: "Our organic Amla (Indian Gooseberry) powder is made by sun-drying premium gooseberries and grinding them traditionally. It retains maximum nutrients and has zero preservatives.",
+    image: "images/amla-powder.jpg",
+    description: "100% pure sun-dried wild Indian gooseberry powder. Rich in natural Vitamin C and essential antioxidants for daily vitality.",
     ingredients: "100% Sun-Dried Organic Indian Gooseberry (Amla)",
     benefits: ["Rich in Vitamin C and antioxidants", "Boosts natural immunity", "Improves hair growth & skin health", "Enhances digestion"],
     sizes: [
-      { weight: "100g", price: 90 },
-      { weight: "250g", price: 180 },
-      { weight: "500g", price: 340 }
-    ]
+      { weight: "100g", price: 100 },
+      { weight: "250g", price: 200 },
+      { weight: "500g", price: 380 }
+    ],
+    inStock: true,
+    featured: true
   },
   {
     id: "sweet-amla-candy",
-    name: "Homemade Sweet Amla Candy",
+    name: "Wild Honey Soaked Amla Candy",
     category: "amla-products",
-    price: 150,
+    price: 250,
     rating: 4.9,
-    reviewsCount: 38,
+    reviewsCount: 68,
     image: "images/sweet-amla-candy.jpg",
-    description: "Juicy amlas soaked in organic sugar syrup and sun-dried to perfection. A tasty, healthy treat for children and adults alike.",
-    ingredients: "Organic Amla, Organic Sugar, Lemon Juice",
-    benefits: ["Delicious daily source of Vitamin C", "No artificial colors or flavors", "Acts as a great digestive aid", "Kid-friendly healthy snack"],
+    description: "Fresh organic amla chunks steeped in raw forest honey for 60 days. A traditional Ayurvedic digestive candy.",
+    ingredients: "Fresh Organic Amla, Raw Wild Forest Honey, Cardamom, Black Pepper",
+    benefits: ["Steeped in raw wild honey for 60 days", "Rich source of Vitamin C & natural immunity builder", "Excellent digestive and appetite booster", "100% free from refined white sugar & artificial preservatives"],
     sizes: [
-      { weight: "200g", price: 150 },
-      { weight: "500g", price: 320 }
-    ]
+      { weight: "250g", price: 250 },
+      { weight: "500g", price: 480 }
+    ],
+    inStock: true,
+    featured: true
+  },
+  {
+    id: "healthy-mix",
+    name: "Traditional Sathu Maavu Health Mix",
+    category: "healthy-mixes",
+    price: 120,
+    rating: 4.9,
+    reviewsCount: 95,
+    image: "images/healthy-mix.jpg",
+    description: "Time-tested multigrain nutrition mix crafted with 18 sprouted grains, pulses, millets, and dry fruits.",
+    ingredients: "Sprouted Ragi, Bajra, Jowar, Wheat, Red Rice, Barley, Roasted Gram, Green Gram, Groundnuts, Almonds, Cashews, Cardamom, Dry Ginger, Sago",
+    benefits: ["18 sprouted grains, pulses, millets & nuts", "Complete wholesome nutrition for toddlers and adults", "High in natural dietary fiber, calcium & iron", "Zero chemical additives or artificial flavorings"],
+    sizes: [
+      { weight: "250g", price: 120 },
+      { weight: "500g", price: 230 },
+      { weight: "1kg", price: 450 }
+    ],
+    inStock: true,
+    featured: true
   },
   {
     id: "nuts-powder",
@@ -46,7 +74,9 @@ const PRODUCTS = [
     sizes: [
       { weight: "250g", price: 320 },
       { weight: "500g", price: 600 }
-    ]
+    ],
+    inStock: true,
+    featured: true
   },
   {
     id: "ragi-almond-powder",
@@ -62,23 +92,9 @@ const PRODUCTS = [
     sizes: [
       { weight: "250g", price: 240 },
       { weight: "500g", price: 450 }
-    ]
-  },
-  {
-    id: "healthy-mix",
-    name: "Homemade Healthy Mix (Sathu Maavu)",
-    category: "healthy-mixes",
-    price: 280,
-    rating: 4.9,
-    reviewsCount: 88,
-    image: "images/healthy-mix.jpg",
-    description: "A time-tested traditional formula comprising 18 natural ingredients: sprouted millets, grains, pulses, and nuts. Lightly roasted and finely ground for maximum nutrition and traditional flavor.",
-    ingredients: "Sprouted Ragi, Bajra, Jowar, Wheat, Red Rice, Barley, Roasted Gram, Green Gram, Groundnuts, Almonds, Cashews, Cardamom, Dry Ginger, Sago",
-    benefits: ["100% natural weight gainer for growing kids", "Complete balanced meal rich in fiber and vitamins", "Boosts energy and stamina", "No artificial sweeteners, colors, or preservatives"],
-    sizes: [
-      { weight: "500g", price: 280 },
-      { weight: "1kg", price: 540 }
-    ]
+    ],
+    inStock: true,
+    featured: true
   },
   {
     id: "millet-health-mix",
@@ -94,7 +110,9 @@ const PRODUCTS = [
     sizes: [
       { weight: "500g", price: 260 },
       { weight: "1kg", price: 500 }
-    ]
+    ],
+    inStock: true,
+    featured: false
   },
   {
     id: "cow-ghee",
@@ -111,13 +129,15 @@ const PRODUCTS = [
       { weight: "250ml", price: 450 },
       { weight: "500ml", price: 850 },
       { weight: "1L", price: 1600 }
-    ]
+    ],
+    inStock: true,
+    featured: false
   },
   {
     id: "forest-honey",
     name: "Raw Wild Forest Honey",
     category: "other-organics",
-    price: 290,
+    price: 160,
     rating: 4.9,
     reviewsCount: 77,
     image: "images/forest-honey.webp",
@@ -128,7 +148,9 @@ const PRODUCTS = [
       { weight: "250g", price: 160 },
       { weight: "500g", price: 290 },
       { weight: "1kg", price: 550 }
-    ]
+    ],
+    inStock: true,
+    featured: true
   }
 ];
 

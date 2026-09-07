@@ -640,27 +640,28 @@ header .container {
 }
 
 .filter-chip {
-  padding: 10px 22px;
+  padding: 9px 22px;
   background-color: var(--white);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--primary);
   border-radius: 50px;
-  font-weight: 500;
-  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--primary);
   white-space: nowrap;
   transition: var(--transition);
+  cursor: pointer;
 }
 
 .filter-chip:hover {
   background-color: var(--primary-light);
   color: var(--primary);
-  border-color: var(--primary);
 }
 
 .filter-chip.active {
   background-color: var(--primary);
   color: var(--white);
   border-color: var(--primary);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25);
 }
 
 /* Product Cards Grid */
@@ -837,35 +838,40 @@ header .container {
 }
 
 .btn-card-wishlist {
-  background-color: #fff3e0;
-  color: var(--secondary);
+  background-color: #fff1e6;
+  color: #f97316;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
 }
 
 .btn-card-wishlist:hover,
 .btn-card-wishlist.active {
-  background-color: var(--danger-light);
-  color: var(--danger);
-  border-color: var(--danger);
+  background-color: #fee2e2;
+  color: #ef4444;
 }
 
 .btn-card-detail {
-  background-color: var(--secondary-light);
-  color: var(--secondary-hover);
+  background-color: #fff1e6;
+  color: #f97316;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
 }
 
 .btn-card-detail:hover {
-  background-color: var(--secondary);
-  color: var(--white);
+  background-color: #fed7aa;
+  color: #ea580c;
 }
 
 .no-results {

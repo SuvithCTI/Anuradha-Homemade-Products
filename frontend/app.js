@@ -53,88 +53,103 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
 
-async function checkAuthStatus() {
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('token')) {
-    localStorage.setItem('auth_token', urlParams.get('token'));
-  }
-  const token = localStorage.getItem('auth_token');
-  const headers = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+function checkAuthStatus() {
+  const user = window.StorageService ? window.StorageService.getCurrentUser() : null;
 
-  try {
-    const response = await fetch(`${BACKEND_API_URL}/api/auth/me`, {
-      credentials: 'include',
-      headers: headers
-    });
-    if (response.ok) {
-      isAuthenticated = true;
-      const data = await response.json();
-      if (data.user) {
-        localStorage.setItem('currentUser', JSON.stringify(data.user));
-      }
-      // Update profile button link to go to dashboard instead of login
-      const userBtn = document.getElementById('user-btn');
-      if (userBtn) {
-        if (data.user && data.user.role === 'ADMIN') {
-          userBtn.href = 'admin/dashboard.html';
-          userBtn.title = 'Admin Console';
-        } else {
-          userBtn.href = 'customer/dashboard.html';
-          userBtn.title = (data.user && data.user.firstName) ? `Dashboard (${data.user.firstName})` : 'Go to Dashboard';
-        }
-      }
-    } else {
-      isAuthenticated = false;
-      if (response.status === 401) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('currentUser');
-      }
+  if (user) {
+    isAuthenticated = true;
+    const userBtn = document.getElementById('user-btn');
+    if (userBtn) {
+      userBtn.href = 'customer/dashboard.html';
+      userBtn.title = user.firstName ? `Dashboard (${user.firstName})` : 'Go to Dashboard';
     }
-  } catch (e) {
+  } else {
     isAuthenticated = false;
   }
 }
 
-async function loadProductsFromBackend() {
+function getCatalogProducts() {
+  if (Array.isArray(window.PRODUCTS) && window.PRODUCTS.length > 0) {
+    return window.PRODUCTS;
+  }
+  if (typeof PRODUCTS !== 'undefined' && Array.isArray(PRODUCTS) && PRODUCTS.length > 0) {
+    window.PRODUCTS = PRODUCTS;
+    return window.PRODUCTS;
+  }
+  if (window.StorageService) {
+    const list = window.StorageService.getProducts();
+    if (Array.isArray(list) && list.length > 0) {
+      window.PRODUCTS = list;
+      return window.PRODUCTS;
+    }
+  }
+  return [];
+}
+
+function loadProductsFromBackend() {
   try {
-    const res = await fetch(`${BACKEND_API_URL}/api/products`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.length > 0) {
-        window.PRODUCTS = data.map(p => {
-          let sizes = [];
-          if (p.sizesJson) {
-            try { sizes = JSON.parse(p.sizesJson); } catch (e) { sizes = [{ weight: "Default", price: p.price }]; }
-          }
-          let benefits = [];
-          if (p.benefits) {
-            try { benefits = JSON.parse(p.benefits); } catch (e) { benefits = [p.benefits]; }
-          }
-          return {
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            price: p.price,
-            rating: p.rating || 5.0,
-            reviewsCount: p.reviewsCount || 0,
-            image: p.image,
-            description: p.description || "",
-            ingredients: p.ingredients || "",
-            benefits: benefits,
-            sizes: sizes.length ? sizes : [{ weight: "Standard", price: p.price }],
-            inStock: p.inStock !== false,
-            featured: p.featured === true
-          };
-        });
-        renderProducts();
-        renderFeaturedProducts();
+    let rawList = [];
+    if (window.StorageService) {
+      rawList = window.StorageService.getProducts();
+    }
+    if (!rawList || rawList.length === 0) {
+      if (typeof PRODUCTS !== 'undefined' && Array.isArray(PRODUCTS)) {
+        rawList = PRODUCTS;
+      } else if (Array.isArray(window.PRODUCTS)) {
+        rawList = window.PRODUCTS;
       }
     }
-  } catch (e) {
-    console.warn("Using default static product catalog", e);
+    if (rawList && rawList.length > 0) {
+      window.PRODUCTS = rawList.map(p => {
+        let sizes = [];
+        if (Array.isArray(p.sizes) && p.sizes.length > 0) {
+          sizes = p.sizes;
+        } else if (p.sizesJson) {
+          try {
+            sizes = typeof p.sizesJson === 'string' ? JSON.parse(p.sizesJson) : p.sizesJson;
+          } catch (e) {
+            sizes = [{ weight: "Standard", price: p.price }];
+          }
+        } else {
+          sizes = [{ weight: "Standard", price: p.price }];
+        }
+
+        let benefits = [];
+        if (Array.isArray(p.benefits)) {
+          benefits = p.benefits;
+        } else if (p.benefits) {
+          try {
+            benefits = typeof p.benefits === 'string' && p.benefits.startsWith('[') ? JSON.parse(p.benefits) : [p.benefits];
+          } catch (e) {
+            benefits = [p.benefits];
+          }
+        } else {
+          benefits = ["100% pure, natural, and preservative-free."];
+        }
+
+        const basePrice = (sizes[0] && sizes[0].price) ? sizes[0].price : p.price;
+
+        return {
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          price: basePrice,
+          rating: p.rating || 5.0,
+          reviewsCount: p.reviewsCount || 0,
+          image: p.image || 'images/healthy-mix.jpg',
+          description: p.description || "",
+          ingredients: p.ingredients || "",
+          benefits: benefits,
+          sizes: sizes,
+          inStock: p.inStock !== false,
+          featured: p.featured === true
+        };
+      });
+      renderProducts();
+      renderFeaturedProducts();
+    }
+  } catch (err) {
+    console.warn("Products normalization error:", err);
   }
 }
 
@@ -360,24 +375,18 @@ function setupEventListeners() {
 
   // Newsletter Subscription Form
   document.querySelectorAll('.newsletter-form').forEach(form => {
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
       const input = form.querySelector('input[type="email"]');
       if (!input || !input.value.trim()) return;
       const email = input.value.trim();
-      try {
-        const response = await fetch(`${BACKEND_API_URL}/api/newsletter/subscribe`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        const res = await response.json();
+      if (window.StorageService) {
+        const res = window.StorageService.addNewsletter(email);
         showFloatingToast(res.message || 'Subscribed to newsletter!');
-        form.reset();
-      } catch (err) {
+      } else {
         showFloatingToast('Subscribed to newsletter!');
-        form.reset();
       }
+      form.reset();
     });
   });
 
@@ -461,12 +470,25 @@ function renderProducts() {
   const grid = document.getElementById('products-grid');
   if (!grid) return;
 
+  const prods = getCatalogProducts();
+  if (!prods || prods.length === 0) {
+    grid.innerHTML = `
+      <div class="no-results">
+        <i class="fa-solid fa-seedling"></i>
+        <p>Loading fresh organic products...</p>
+      </div>
+    `;
+    return;
+  }
+
   // Filter products
-  let filtered = window.PRODUCTS.filter(product => {
+  let filtered = prods.filter(product => {
     const matchesCategory = currentFilter === 'all' || product.category === currentFilter;
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery) || 
-                          product.description.toLowerCase().includes(searchQuery) ||
-                          product.ingredients.toLowerCase().includes(searchQuery);
+    const q = (searchQuery || '').toLowerCase().trim();
+    const matchesSearch = !q || 
+                          (product.name && product.name.toLowerCase().includes(q)) || 
+                          (product.description && product.description.toLowerCase().includes(q)) ||
+                          (product.ingredients && product.ingredients.toLowerCase().includes(q));
     return matchesCategory && matchesSearch;
   });
 
@@ -476,7 +498,7 @@ function renderProducts() {
   } else if (currentSort === 'price-high') {
     filtered.sort((a, b) => b.price - a.price);
   } else if (currentSort === 'rating') {
-    filtered.sort((a, b) => b.rating - a.rating);
+    filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5));
   }
 
   // Clear grid
@@ -497,13 +519,20 @@ function renderProducts() {
     const isWishlisted = wishlist.includes(product.id);
     const defaultSize = product.sizes ? product.sizes[0] : { weight: product.weight, price: product.price };
     const priceText = `Rs. ${defaultSize.price}`;
-    
+    const categoryLabels = {
+      'amla-products': 'Amla Products',
+      'nuts-powders': 'Nuts Powders',
+      'healthy-mixes': 'Healthy Mixes',
+      'other-organics': 'Other Organics'
+    };
+    const badgeText = categoryLabels[product.category] || product.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
     const card = document.createElement('div');
     card.className = 'product-card';
     card.innerHTML = `
       <div class="product-image-container" onclick="openDetailsModal('${product.id}')" style="cursor: pointer;">
-        <img class="product-card-img" src="${product.image}" alt="${product.name}" loading="lazy">
-        <span class="product-card-badge">${product.category.replace('-', ' ')}</span>
+        <img class="product-card-img" src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.onerror=null;this.src='images/healthy-mix.jpg'">
+        <span class="product-card-badge">${badgeText}</span>
       </div>
       <div class="product-card-body">
         <div class="product-card-rating">
@@ -519,7 +548,7 @@ function renderProducts() {
           </div>
           <div class="product-card-actions">
             <button class="btn-card-add" onclick="addToCart('${product.id}', '${defaultSize.weight}', ${defaultSize.price})">
-              <i class="fa-solid fa-cart-plus"></i> Add
+              <i class="fa-solid fa-cart-shopping"></i> Add
             </button>
             <button class="btn-card-wishlist ${isWishlisted ? 'active' : ''}" onclick="toggleWishlist('${product.id}')" title="Wishlist" aria-label="Add to Wishlist">
               <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
@@ -554,6 +583,7 @@ window.openDetailsModal = function(id) {
   const actionRow = modal.querySelector('.modal-actions');
 
   title.textContent = product.name;
+  modalImg.onerror = function() { this.onerror = null; this.src = 'images/healthy-mix.jpg'; };
   modalImg.src = product.image;
   modalImg.alt = product.name;
   desc.textContent = product.description;
@@ -702,7 +732,7 @@ function updateWishlistUI() {
     const itemEl = document.createElement('div');
     itemEl.className = 'wishlist-item';
     itemEl.innerHTML = `
-      <img class="wishlist-item-img" src="${product.image}" alt="${product.name}">
+      <img class="wishlist-item-img" src="${product.image}" alt="${product.name}" onerror="this.onerror=null;this.src='images/healthy-mix.jpg'">
       <div class="wishlist-item-info">
         <h4 class="wishlist-item-name">${product.name}</h4>
         <span class="wishlist-item-price">Rs. ${defaultSize.price}</span>
@@ -794,7 +824,7 @@ function updateCartUI() {
     const itemEl = document.createElement('div');
     itemEl.className = 'cart-item';
     itemEl.innerHTML = `
-      <img class="cart-item-img" src="${item.image}" alt="${item.name}">
+      <img class="cart-item-img" src="${item.image}" alt="${item.name}" onerror="this.onerror=null;this.src='images/healthy-mix.jpg'">
       <div class="cart-item-info">
         <h4 class="cart-item-name">${item.name}</h4>
         <div class="cart-item-weight">${item.weight}</div>
@@ -1389,15 +1419,9 @@ async function handleReviewSubmit(e) {
   localStorage.setItem('aho_reviews', JSON.stringify(reviews));
   renderReviews();
 
-  // Send and save to MySQL database
-  try {
-    await fetch(`${BACKEND_API_URL}/api/feedbacks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, location, rating, comment: text })
-    });
-  } catch (err) {
-    console.error('Feedback API error:', err);
+  // Save review in StorageService
+  if (window.StorageService) {
+    window.StorageService.addFeedback({ name, email: '', rating, comment: text });
   }
 
   // Reset form
@@ -1405,18 +1429,9 @@ async function handleReviewSubmit(e) {
   showFloatingToast('Thank you! Your feedback has been saved.');
 }
 
-// Contact Form validation and submit to MySQL
-async function handleContactSubmit(e) {
+// Contact Form validation and submit
+function handleContactSubmit(e) {
   e.preventDefault();
-
-  if (!isAuthenticated) {
-    showFloatingToast('Please sign in to send an enquiry!');
-    sessionStorage.setItem('redirectAfterLogin', window.location.href);
-    setTimeout(() => {
-      window.location.href = 'login.html';
-    }, 1500);
-    return;
-  }
 
   const nameInput = document.getElementById('contact-name');
   const phoneInput = document.getElementById('contact-phone');
@@ -1434,7 +1449,7 @@ async function handleContactSubmit(e) {
 
   const name = nameInput.value.trim();
   const phone = phoneInput.value.trim();
-  const email = emailInput.value.trim();
+  const email = emailInput ? emailInput.value.trim() : '';
   const message = messageInput.value.trim();
 
   // Validation
@@ -1450,34 +1465,19 @@ async function handleContactSubmit(e) {
     return;
   }
 
-  if (message.length < 10) {
-    dangerAlert.textContent = 'Please describe your request in more detail (at least 10 characters).';
+  if (message.length < 5) {
+    dangerAlert.textContent = 'Please describe your request in more detail.';
     dangerAlert.style.display = 'block';
     return;
   }
 
-  // Submit to MySQL backend
-  try {
-    const response = await fetch(`${BACKEND_API_URL}/api/enquiries`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, email, message })
-    });
-    const result = await response.json();
-    if (response.ok) {
-      successAlert.textContent = 'Thank you! Your enquiry has been saved and submitted. We will contact you soon.';
-      successAlert.style.display = 'block';
-      e.target.reset();
-    } else {
-      dangerAlert.textContent = result.message || 'Failed to submit enquiry. Please try again.';
-      dangerAlert.style.display = 'block';
-    }
-  } catch (err) {
-    // Fallback message
-    successAlert.textContent = 'Thank you! Your enquiry has been submitted. We will contact you soon.';
-    successAlert.style.display = 'block';
-    e.target.reset();
+  if (window.StorageService) {
+    window.StorageService.addEnquiry({ name, phone, email, subject: 'Website Contact Inquiry', message });
   }
+
+  successAlert.textContent = 'Thank you! Your enquiry has been submitted. We will contact you soon.';
+  successAlert.style.display = 'block';
+  e.target.reset();
 }
 
 // Hero Slider Initialization and Logic
@@ -1569,35 +1569,46 @@ function renderFeaturedProducts() {
   if (!grid) return;
 
   grid.innerHTML = '';
-  const featured = window.PRODUCTS.slice(0, 4); // Display first 4 popular items
+  const prods = getCatalogProducts();
+  const featured = prods.slice(0, 4); // Display first 4 popular items
+
+  const categoryLabels = {
+    'amla-products': 'Amla Products',
+    'nuts-powders': 'Nuts Powders',
+    'healthy-mixes': 'Healthy Mixes',
+    'other-organics': 'Other Organics'
+  };
 
   featured.forEach(product => {
     const isWishlisted = wishlist.includes(product.id);
-    const defaultSize = product.sizes ? product.sizes[0] : { weight: product.weight, price: product.price };
+    const defaultSize = (product.sizes && product.sizes[0]) 
+      ? product.sizes[0] 
+      : { weight: product.weight || "Standard", price: product.price };
     const priceText = `Rs. ${defaultSize.price}`;
-    
+    const badgeText = categoryLabels[product.category] || (product.category || '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
     const card = document.createElement('div');
     card.className = 'product-card';
     card.innerHTML = `
       <div class="product-image-container" onclick="openDetailsModal('${product.id}')" style="cursor: pointer;">
-        <img class="product-card-img" src="${product.image}" alt="${product.name}" loading="lazy">
-        <span class="product-card-badge">${product.category.replace('-', ' ')}</span>
+        <img class="product-card-img" src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.src='images/healthy-mix.jpg'">
+        <span class="product-card-badge">${badgeText}</span>
       </div>
       <div class="product-card-body">
         <div class="product-card-rating">
           <i class="fa-solid fa-star"></i>
-          <span>${product.rating.toFixed(1)} (${product.reviewsCount} reviews)</span>
+          <span>${(product.rating || 5.0).toFixed(1)} (${product.reviewsCount || 0} reviews)</span>
         </div>
         <h3 class="product-card-title" onclick="openDetailsModal('${product.id}')" style="cursor: pointer;">${product.name}</h3>
-        <p class="product-card-desc">${product.description}</p>
+        <p class="product-card-desc">${product.description || ''}</p>
         <div class="product-card-footer">
           <div class="product-card-price-row">
             <span class="product-card-price">${priceText}</span>
-            <span class="product-card-weight">${defaultSize.weight || product.weight}</span>
+            <span class="product-card-weight">${defaultSize.weight || product.weight || 'Standard'}</span>
           </div>
           <div class="product-card-actions">
             <button class="btn-card-add" onclick="addToCart('${product.id}', '${defaultSize.weight}', ${defaultSize.price})">
-              <i class="fa-solid fa-cart-plus"></i> Add
+              <i class="fa-solid fa-cart-shopping"></i> Add
             </button>
             <button class="btn-card-wishlist ${isWishlisted ? 'active' : ''}" onclick="toggleWishlist('${product.id}')" title="Wishlist" aria-label="Add to Wishlist">
               <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
@@ -1781,10 +1792,10 @@ function initAlchemyMixer() {
       icon: "fa-solid fa-cheese"
     },
     'sweet-amla-candy': {
-      name: "Homemade Sweet Amla Candy",
-      ingredients: "Wild Forest Gooseberries (Amla), Organic Raw Sugar (Khandsari)",
+      name: "Wild Honey Soaked Amla Candy",
+      ingredients: "Wild Forest Gooseberries (Amla), Raw Wild Forest Honey",
       benefit: "High-density natural Vitamin C source. Enhances immune cell function, skin brightness, hair thickness, and digestion.",
-      process: "Steamed, sun-dried, cured naturally in light organic syrup",
+      process: "Steamed, sun-dried, cured naturally in raw forest honey for 60 days",
       icon: "fa-solid fa-leaf"
     },
     'amla-powder': {

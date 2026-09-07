@@ -1,6 +1,7 @@
-const backendUrl = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-    ? (window.location.port === "8080" ? "" : "http://localhost:8080")
-    : "https://anuradha-homemade-products.onrender.com";
+/**
+ * Customer Dashboard Script - Standalone Frontend
+ * Anuradha Homemade Organic Products
+ */
 
 document.addEventListener("DOMContentLoaded", () => {
     const userDisplayName = document.getElementById("user-display-name");
@@ -15,61 +16,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const alertBox = document.getElementById("alert-box");
     const alertText = document.getElementById("alert-text");
 
-    // Check for token in URL query parameter (from Google OAuth or redirect)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("token")) {
-        localStorage.setItem("auth_token", urlParams.get("token"));
-        // Clean URL without reloading
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
+    // Fetch user details from StorageService
+    function loadUserProfile() {
+        const user = window.StorageService ? window.StorageService.getCurrentUser() : null;
 
-    // Fetch user details on page load to verify the active session
-    async function loadUserProfile() {
-        const token = localStorage.getItem("auth_token");
-        const headers = {
-            "Accept": "application/json"
-        };
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        try {
-            const response = await fetch(`${backendUrl}/api/auth/me`, {
-                method: "GET",
-                headers: headers,
-                credentials: "include" // Send HttpOnly cookie
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const user = data.user;
-                if (user) {
-                    localStorage.setItem("currentUser", JSON.stringify(user));
-                    // Populate UI
-                    userDisplayName.textContent = user.firstName || "Customer";
-                    if (profileFirst) profileFirst.value = user.firstName || "";
-                    if (profileLast) profileLast.value = user.lastName || "";
-                    if (profileEmail) profileEmail.value = user.email || "";
-                }
-            } else {
-                // If unauthorized, clear tokens and redirect to login page
-                console.warn("Unauthorized access, redirecting to login...");
-                localStorage.removeItem("auth_token");
-                localStorage.removeItem("currentUser");
-                window.location.href = "../login.html";
-            }
-        } catch (error) {
-            console.error("Failed to load user profile", error);
-            showAlert("error", "Failed to connect to the backend authentication server.");
-            setTimeout(() => {
-                window.location.href = "../login.html";
-            }, 3000);
+        if (user) {
+            if (userDisplayName) userDisplayName.textContent = user.firstName || "Customer";
+            if (profileFirst) profileFirst.value = user.firstName || "";
+            if (profileLast) profileLast.value = user.lastName || "";
+            if (profileEmail) profileEmail.value = user.email || "";
+        } else {
+            // If unauthorized, redirect to login page
+            console.warn("Unauthenticated session, redirecting to login...");
+            window.location.href = "../login.html";
         }
     }
 
     // Profile form submission (Edit Name)
     if (profileForm) {
-        profileForm.addEventListener("submit", async (e) => {
+        profileForm.addEventListener("submit", (e) => {
             e.preventDefault();
             hideAlert();
             if (firstNameError) firstNameError.style.display = "none";
@@ -89,83 +54,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setSaveLoading(true);
 
-            const token = localStorage.getItem("auth_token");
-            const headers = {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            };
-            if (token) {
-                headers["Authorization"] = `Bearer ${token}`;
-            }
+            setTimeout(() => {
+                const res = window.StorageService ? window.StorageService.updateProfile(firstName, lastName) : { success: false, message: 'Storage unavailable' };
 
-            try {
-                const response = await fetch(`${backendUrl}/api/auth/profile`, {
-                    method: "PUT",
-                    headers: headers,
-                    credentials: "include",
-                    body: JSON.stringify({ firstName, lastName })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    const user = data.user;
-                    if (user) {
-                        localStorage.setItem("currentUser", JSON.stringify(user));
-                        userDisplayName.textContent = user.firstName;
-                    }
+                if (res.success) {
+                    if (userDisplayName) userDisplayName.textContent = res.user.firstName;
                     showAlert("success", "Name updated successfully!");
                 } else {
-                    showAlert("error", data.message || "Failed to update profile.");
+                    showAlert("error", res.message || "Failed to update profile.");
                 }
-            } catch (error) {
-                console.error("Profile update error:", error);
-                showAlert("error", "Network error. Failed to save changes.");
-            } finally {
                 setSaveLoading(false);
-            }
+            }, 300);
         });
     }
 
     // Logout function
-    btnLogout.addEventListener("click", async () => {
-        setLogoutLoading(true);
-        hideAlert();
+    if (btnLogout) {
+        btnLogout.addEventListener("click", () => {
+            setLogoutLoading(true);
+            hideAlert();
 
-        const token = localStorage.getItem("auth_token");
-        const headers = {
-            "Accept": "application/json"
-        };
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
+            if (window.StorageService) {
+                window.StorageService.logout();
+            }
 
-        try {
-            await fetch(`${backendUrl}/api/auth/logout`, {
-                method: "POST",
-                headers: headers,
-                credentials: "include"
-            });
-        } catch (error) {
-            console.warn("Logout request error", error);
-        } finally {
-            localStorage.removeItem("auth_token");
-            localStorage.removeItem("currentUser");
             showAlert("success", "Logged out successfully. Redirecting...");
             setTimeout(() => {
                 window.location.href = "../index.html";
-            }, 1000);
-        }
-    });
+            }, 600);
+        });
+    }
 
     function showAlert(type, message) {
+        if (!alertBox || !alertText) return;
         alertBox.className = `alert alert-${type}`;
         alertText.textContent = message;
         alertBox.style.display = "flex";
     }
 
     function hideAlert() {
-        alertBox.style.display = "none";
+        if (alertBox) alertBox.style.display = "none";
     }
 
     function setSaveLoading(isLoading) {
@@ -175,26 +103,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (isLoading) {
             btnSaveProfile.disabled = true;
-            btnText.textContent = "Saving...";
+            if (btnText) btnText.textContent = "Saving...";
             if (spinner) spinner.style.display = "inline-block";
         } else {
             btnSaveProfile.disabled = false;
-            btnText.textContent = "Save Changes";
+            if (btnText) btnText.textContent = "Save Changes";
             if (spinner) spinner.style.display = "none";
         }
     }
 
     function setLogoutLoading(isLoading) {
+        if (!btnLogout) return;
         const btnText = btnLogout.querySelector(".btn-text");
         const spinner = btnLogout.querySelector(".spinner");
 
         if (isLoading) {
             btnLogout.disabled = true;
-            btnText.textContent = "Signing out...";
+            if (btnText) btnText.textContent = "Signing out...";
             if (spinner) spinner.style.display = "inline-block";
         } else {
             btnLogout.disabled = false;
-            btnText.textContent = "Sign Out";
+            if (btnText) btnText.textContent = "Sign Out";
             if (spinner) spinner.style.display = "none";
         }
     }

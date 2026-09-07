@@ -1,6 +1,7 @@
-const backendUrl = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-    ? (window.location.port === "8080" ? "" : "http://localhost:8080")
-    : "https://anuradha-homemade-products.onrender.com";
+/**
+ * Reset Password Script - Standalone Client
+ * Anuradha Homemade Organic Products
+ */
 
 document.addEventListener("DOMContentLoaded", () => {
     const resetForm = document.getElementById("reset-form");
@@ -25,12 +26,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // Extract token from URL query parameters
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
+    const emailParam = urlParams.get("email");
 
     if (token) {
-        tokenInput.value = token;
-        resetForm.style.display = "block";
+        if (tokenInput) tokenInput.value = token;
+        if (resetForm) resetForm.style.display = "block";
     } else {
-        invalidTokenState.style.display = "block";
+        if (invalidTokenState) invalidTokenState.style.display = "block";
     }
 
     const eyeSvg = `
@@ -47,18 +49,20 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     // Toggle Password Visibility
-    togglePasswordBtn.addEventListener("click", () => {
-        if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            togglePasswordBtn.innerHTML = eyeOffSvg;
-        } else {
-            passwordInput.type = "password";
-            togglePasswordBtn.innerHTML = eyeSvg;
-        }
-    });
+    if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener("click", () => {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                togglePasswordBtn.innerHTML = eyeOffSvg;
+            } else {
+                passwordInput.type = "password";
+                togglePasswordBtn.innerHTML = eyeSvg;
+            }
+        });
+    }
 
     // Toggle Confirm Password Visibility
-    if (toggleConfirmBtn) {
+    if (toggleConfirmBtn && confirmInput) {
         toggleConfirmBtn.addEventListener("click", () => {
             if (confirmInput.type === "password") {
                 confirmInput.type = "text";
@@ -71,99 +75,89 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Password Strength Checker
-    passwordInput.addEventListener("input", () => {
-        const password = passwordInput.value;
-        if (!password) {
-            strengthMeter.style.display = "none";
-            strengthText.style.display = "none";
-            return;
-        }
+    if (passwordInput) {
+        passwordInput.addEventListener("input", () => {
+            const password = passwordInput.value;
+            if (!password) {
+                if (strengthMeter) strengthMeter.style.display = "none";
+                if (strengthText) strengthText.style.display = "none";
+                return;
+            }
 
-        strengthMeter.style.display = "block";
-        strengthText.style.display = "block";
+            if (strengthMeter) strengthMeter.style.display = "block";
+            if (strengthText) strengthText.style.display = "block";
 
-        const strength = checkPasswordStrength(password);
-        updateStrengthUI(strength);
-    });
+            const strength = checkPasswordStrength(password);
+            updateStrengthUI(strength);
+        });
+    }
 
     // Reset Password Submission
-    resetForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+    if (resetForm) {
+        resetForm.addEventListener("submit", (e) => {
+            e.preventDefault();
 
-        // Reset warnings
-        hideAlert();
-        passwordError.style.display = "none";
-        confirmError.style.display = "none";
-        passwordInput.classList.remove("input-error");
-        confirmInput.classList.remove("input-error");
+            // Reset warnings
+            hideAlert();
+            if (passwordError) passwordError.style.display = "none";
+            if (confirmError) confirmError.style.display = "none";
+            if (passwordInput) passwordInput.classList.remove("input-error");
+            if (confirmInput) confirmInput.classList.remove("input-error");
 
-        let isValid = true;
-        const tokenValue = tokenInput.value;
-        const password = passwordInput.value;
-        const confirmPassword = confirmInput.value;
+            let isValid = true;
+            const password = passwordInput.value;
+            const confirmPassword = confirmInput ? confirmInput.value : "";
 
-        if (!password) {
-            showInputError(passwordInput, passwordError, "Password is required.");
-            isValid = false;
-        } else if (password.length < 8) {
-            showInputError(passwordInput, passwordError, "Password must be at least 8 characters long.");
-            isValid = false;
-        }
+            if (!password) {
+                showInputError(passwordInput, passwordError, "Password is required.");
+                isValid = false;
+            } else if (password.length < 6) {
+                showInputError(passwordInput, passwordError, "Password must be at least 6 characters long.");
+                isValid = false;
+            }
 
-        if (!confirmPassword) {
-            showInputError(confirmInput, confirmError, "Please confirm your password.");
-            isValid = false;
-        } else if (password !== confirmPassword) {
-            showInputError(confirmInput, confirmError, "Passwords do not match.");
-            isValid = false;
-        }
+            if (confirmInput && password !== confirmPassword) {
+                showInputError(confirmInput, confirmError, "Passwords do not match.");
+                isValid = false;
+            }
 
-        if (!isValid) return;
+            if (!isValid) return;
 
-        // Loading
-        setLoading(true);
+            setLoading(true);
 
-        try {
-            const response = await fetch(`${backendUrl}/api/auth/reset-password`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({ token: tokenValue, password, confirmPassword })
-            });
+            setTimeout(() => {
+                const emailToReset = emailParam || sessionStorage.getItem("reset_email");
+                if (emailToReset && window.StorageService) {
+                    const users = window.StorageService.getUsers();
+                    const user = users.find(u => u.email.toLowerCase() === emailToReset.toLowerCase());
+                    if (user) {
+                        user.password = password;
+                        localStorage.setItem('anuradha_users', JSON.stringify(users));
+                    }
+                }
 
-            const data = await response.json();
-
-            if (response.ok) {
-                showAlert("success", data.message || "Password has been reset successfully! Redirecting to Home Page...");
+                showAlert("success", "Password has been reset successfully! Redirecting to Home Page...");
                 resetForm.reset();
-                strengthMeter.style.display = "none";
-                strengthText.style.display = "none";
+                if (strengthMeter) strengthMeter.style.display = "none";
+                if (strengthText) strengthText.style.display = "none";
                 setTimeout(() => {
                     window.location.href = "index.html";
-                }, 1500);
-            } else {
-                showAlert("error", data.message || "Password reset failed. Token may be expired.");
-                setLoading(false);
-            }
-        } catch (error) {
-            console.error("Reset password request error", error);
-            showAlert("error", "Network connection failed. Please try again.");
-            setLoading(false);
-        }
-    });
+                }, 1200);
+            }, 400);
+        });
+    }
 
     function checkPasswordStrength(password) {
         let score = 0;
+        if (password.length >= 6) score++;
         if (password.length >= 8) score++;
-        if (/[A-Z]/.test(password)) score++;
         if (/[0-9]/.test(password)) score++;
         if (/[^A-Za-z0-9]/.test(password)) score++;
         return score;
     }
 
     function updateStrengthUI(score) {
+        if (!strengthBar || !strengthText) return;
         let width = "0%";
         let color = "var(--error-color)";
         let text = "Weak";
@@ -180,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
             width = "75%";
             color = "#fbc02d";
             text = "Good";
-        } else if (score === 4) {
+        } else if (score >= 4) {
             width = "100%";
             color = "var(--primary-color)";
             text = "Strong";
@@ -193,33 +187,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function showInputError(input, errorElement, message) {
-        input.classList.add("input-error");
-        errorElement.textContent = message;
-        errorElement.style.display = "block";
+        if (input) input.classList.add("input-error");
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = "block";
+        }
     }
 
     function showAlert(type, message) {
+        if (!alertBox || !alertText) return;
         alertBox.className = `alert alert-${type}`;
         alertText.textContent = message;
         alertBox.style.display = "flex";
     }
 
     function hideAlert() {
-        alertBox.style.display = "none";
+        if (alertBox) alertBox.style.display = "none";
     }
 
     function setLoading(isLoading) {
+        if (!btnReset) return;
         const btnText = btnReset.querySelector(".btn-text");
         const spinner = btnReset.querySelector(".spinner");
 
         if (isLoading) {
             btnReset.disabled = true;
-            btnText.textContent = "Resetting password...";
-            spinner.style.display = "inline-block";
+            if (btnText) btnText.textContent = "Resetting password...";
+            if (spinner) spinner.style.display = "inline-block";
         } else {
             btnReset.disabled = false;
-            btnText.textContent = "Reset Password";
-            spinner.style.display = "none";
+            if (btnText) btnText.textContent = "Reset Password";
+            if (spinner) spinner.style.display = "none";
         }
     }
 });
