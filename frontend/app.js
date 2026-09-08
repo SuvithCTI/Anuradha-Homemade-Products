@@ -293,6 +293,9 @@ function applyProductsList(rawList) {
 
     const basePrice = (sizes[0] && sizes[0].price) ? sizes[0].price : p.price;
 
+    const isStockAvailable = (p.inStock === true || p.inStock === 1 || p.in_stock === 1 || p.in_stock === true || p.inStock === '1' || p.in_stock === '1') || 
+      (p.inStock !== false && p.inStock !== 0 && p.in_stock !== 0 && p.inStock !== '0' && p.in_stock !== '0');
+
     return {
       id: p.id,
       name: p.name,
@@ -305,7 +308,7 @@ function applyProductsList(rawList) {
       ingredients: p.ingredients || "",
       benefits: benefits,
       sizes: sizes,
-      inStock: p.inStock !== false,
+      inStock: isStockAvailable,
       featured: p.featured === true
     };
   });
@@ -768,6 +771,7 @@ function renderProducts() {
 
   // Render cards
   filtered.forEach(product => {
+    const isOutOfStock = (product.inStock === false || product.inStock === 0 || product.in_stock === 0 || product.inStock === '0' || product.in_stock === '0');
     const isWishlisted = wishlist.includes(product.id);
     const defaultSize = product.sizes ? product.sizes[0] : { weight: product.weight, price: product.price };
     const priceText = `Rs. ${defaultSize.price}`;
@@ -777,14 +781,16 @@ function renderProducts() {
       'healthy-mixes': 'Healthy Mixes',
       'other-organics': 'Other Organics'
     };
-    const badgeText = categoryLabels[product.category] || product.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const badgeText = isOutOfStock 
+      ? 'Out of Stock' 
+      : (categoryLabels[product.category] || product.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
 
     const card = document.createElement('div');
-    card.className = 'product-card';
+    card.className = `product-card ${isOutOfStock ? 'is-out-of-stock' : ''}`;
     card.innerHTML = `
       <div class="product-image-container" onclick="openDetailsModal('${product.id}')" style="cursor: pointer;">
         <img class="product-card-img" src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.onerror=null;this.src='images/healthy-mix.jpg'">
-        <span class="product-card-badge">${badgeText}</span>
+        <span class="product-card-badge ${isOutOfStock ? 'product-badge-out-of-stock' : ''}">${isOutOfStock ? '🚫 Out of Stock' : badgeText}</span>
       </div>
       <div class="product-card-body">
         <div class="product-card-rating">
@@ -799,9 +805,15 @@ function renderProducts() {
             <span class="product-card-weight">${defaultSize.weight || product.weight}</span>
           </div>
           <div class="product-card-actions">
-            <button class="btn-card-add" onclick="addToCart('${product.id}', '${defaultSize.weight}', ${defaultSize.price})">
-              <i class="fa-solid fa-cart-shopping"></i> Add
-            </button>
+            ${isOutOfStock ? `
+              <button class="btn-card-add btn-card-out-of-stock" disabled title="This item is currently out of stock">
+                <i class="fa-solid fa-ban"></i> Out of Stock
+              </button>
+            ` : `
+              <button class="btn-card-add" onclick="addToCart('${product.id}', '${defaultSize.weight}', ${defaultSize.price})">
+                <i class="fa-solid fa-cart-shopping"></i> Add
+              </button>
+            `}
             <button class="btn-card-wishlist ${isWishlisted ? 'active' : ''}" onclick="toggleWishlist('${product.id}')" title="Wishlist" aria-label="Add to Wishlist">
               <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
             </button>
@@ -895,8 +907,17 @@ window.openDetailsModal = function(id) {
     sizeSelector.style.display = 'none';
   }
 
+  const isOutOfStock = (product.inStock === false || product.inStock === 0 || product.in_stock === 0 || product.inStock === '0' || product.in_stock === '0');
+
   // Dynamic Add buttons
-  actionRow.innerHTML = `
+  actionRow.innerHTML = isOutOfStock ? `
+    <button class="btn btn-disabled" disabled style="background: #e2e8f0 !important; color: #94a3b8 !important; border: 1px solid #cbd5e1 !important; cursor: not-allowed !important; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <i class="fa-solid fa-ban"></i> Out of Stock
+    </button>
+    <button class="btn btn-secondary" onclick="toggleWishlistFromModal('${product.id}')">
+      <i class="fa-solid fa-heart"></i> Wishlist
+    </button>
+  ` : `
     <button class="btn btn-primary" onclick="addToCartAndClose('${product.id}', () => getSelectedWeightAndPrice())">
       <i class="fa-solid fa-cart-plus"></i> Add To Cart
     </button>
@@ -1159,15 +1180,27 @@ async function renderOrdersDrawer() {
       ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
       : 'Recently placed';
     
-    const status = (order.status || 'CONFIRMED').toUpperCase();
-    let statusClass = 'orders-status-confirmed';
-    let statusIcon = '🟢';
-    if (status === 'SHIPPED') {
+    const status = (order.status || 'PENDING').toUpperCase();
+    let statusClass = 'orders-status-pending';
+    let statusIcon = '🟡';
+    let statusLabel = 'Awaiting Admin Confirmation';
+    
+    if (status === 'CONFIRMED' || status === 'ACCEPTED') {
+      statusClass = 'orders-status-confirmed';
+      statusIcon = '🟢';
+      statusLabel = 'Confirmed by Admin';
+    } else if (status === 'SHIPPED') {
       statusClass = 'orders-status-shipped';
       statusIcon = '🚚';
+      statusLabel = 'Shipped';
     } else if (status === 'DELIVERED') {
       statusClass = 'orders-status-delivered';
       statusIcon = '📦';
+      statusLabel = 'Delivered';
+    } else if (status === 'DECLINED' || status === 'CANCELLED') {
+      statusClass = 'orders-status-cancelled';
+      statusIcon = '❌';
+      statusLabel = 'Cancelled';
     }
 
     let items = order.items;
@@ -1205,7 +1238,7 @@ async function renderOrdersDrawer() {
             <div class="orders-drawer-id"><i class="fa-solid fa-receipt" style="color: var(--primary); margin-right: 5px;"></i> ${orderNum}</div>
             <div class="orders-drawer-date">${dateStr}</div>
           </div>
-          <span class="orders-drawer-status ${statusClass}">${statusIcon} ${status}</span>
+          <span class="orders-drawer-status ${statusClass}">${statusIcon} ${statusLabel}</span>
         </div>
         <div class="orders-drawer-items">
           ${itemsHtml || '<div style="font-size:0.8rem; color:#64748b;">No item details available</div>'}
@@ -1233,6 +1266,11 @@ window.updateOrdersCountBadge = updateOrdersCountBadge;
 window.renderOrdersDrawer = renderOrdersDrawer;
 
 window.moveWishlistToCart = async function(id, weight, price) {
+  const product = (window.PRODUCTS || []).find(p => p.id === id);
+  if (product && (product.inStock === false || product.inStock === 0 || product.in_stock === 0 || product.inStock === '0' || product.in_stock === '0')) {
+    showFloatingToast('❌ Sorry, this item is currently out of stock.');
+    return;
+  }
   await addToCart(id, weight, price);
   // Remove from wishlist
   await toggleWishlist(id);
@@ -1242,6 +1280,12 @@ window.moveWishlistToCart = async function(id, weight, price) {
 window.addToCart = async function(id, weight, price) {
   const product = (window.PRODUCTS || []).find(p => p.id === id);
   if (!product) return;
+
+  const isOutOfStock = (product.inStock === false || product.inStock === 0 || product.in_stock === 0 || product.inStock === '0' || product.in_stock === '0');
+  if (isOutOfStock) {
+    showFloatingToast('❌ Sorry, this item is currently out of stock.');
+    return;
+  }
 
   const shopper = getShopperInfo();
   const cartKey = `${id}-${weight}`;
@@ -1659,7 +1703,7 @@ function handleCheckoutSubmit(e) {
         items: orderedCart,
         totalAmount: total,
         shippingAddress: `${address}, ${city} - ${pincode}`,
-        status: 'CONFIRMED',
+        status: 'PENDING',
         createdAt: new Date().toISOString()
       };
       localPlaced.unshift(newPlacedItem);
@@ -1725,12 +1769,12 @@ function showOrderPlacedSuccessModal(orderData) {
 
   modal.innerHTML = `
     <div class="modal-wrapper" style="max-width: 480px; padding: 24px; border-radius: 18px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.18);">
-      <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35); animation: popScale 0.4s ease-out;">
-        <i class="fa-solid fa-check"></i>
+      <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35); animation: popScale 0.4s ease-out;">
+        <i class="fa-solid fa-clock-rotate-left"></i>
       </div>
       
       <h2 style="font-size: 1.45rem; color: #1e293b; margin-bottom: 6px; font-family: 'Playfair Display', serif;">Order Placed Successfully!</h2>
-      <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 16px;">Thank you for ordering with Anuradha Homemade Organics. Your handcrafted order has been received and confirmed.</p>
+      <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 16px;">Thank you for ordering with Anuradha Homemade Organics. Your handcrafted order has been placed and is waiting for confirmation from the admin.</p>
       
       <!-- Order Summary Card -->
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: left; margin-bottom: 18px;">
@@ -1739,7 +1783,7 @@ function showOrderPlacedSuccessModal(orderData) {
             <span style="font-size: 0.75rem; color: #64748b; display: block;">Order Reference:</span>
             <strong style="font-size: 0.95rem; color: #1e293b;">#${orderData.orderNumber}</strong>
           </div>
-          <span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700;">🟢 CONFIRMED</span>
+          <span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; border: 1px solid #fde68a;">🟡 WAITING FOR CONFIRMATION</span>
         </div>
 
         <div style="max-height: 160px; overflow-y: auto; margin-bottom: 8px;">
@@ -1773,7 +1817,7 @@ function showOrderPlacedSuccessModal(orderData) {
   modal.classList.add('open');
   const overlay = document.getElementById('drawer-overlay');
   if (overlay) overlay.classList.add('active');
-  showFloatingToast('🎉 Order placed successfully! Order ID #' + orderData.orderNumber);
+  showFloatingToast('📦 Order placed! Waiting for confirmation from the admin.');
 }
 
 // Inject Checkout Modal HTML dynamically
@@ -2306,19 +2350,22 @@ function renderFeaturedProducts() {
   };
 
   featured.forEach(product => {
+    const isOutOfStock = (product.inStock === false || product.inStock === 0 || product.in_stock === 0 || product.inStock === '0' || product.in_stock === '0');
     const isWishlisted = wishlist.includes(product.id);
     const defaultSize = (product.sizes && product.sizes[0]) 
       ? product.sizes[0] 
       : { weight: product.weight || "Standard", price: product.price };
     const priceText = `Rs. ${defaultSize.price}`;
-    const badgeText = categoryLabels[product.category] || (product.category || '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const badgeText = isOutOfStock
+      ? 'Out of Stock'
+      : (categoryLabels[product.category] || (product.category || '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
 
     const card = document.createElement('div');
-    card.className = 'product-card';
+    card.className = `product-card ${isOutOfStock ? 'is-out-of-stock' : ''}`;
     card.innerHTML = `
       <div class="product-image-container" onclick="openDetailsModal('${product.id}')" style="cursor: pointer;">
         <img class="product-card-img" src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.src='images/healthy-mix.jpg'">
-        <span class="product-card-badge">${badgeText}</span>
+        <span class="product-card-badge ${isOutOfStock ? 'product-badge-out-of-stock' : ''}">${isOutOfStock ? '🚫 Out of Stock' : badgeText}</span>
       </div>
       <div class="product-card-body">
         <div class="product-card-rating">
@@ -2333,9 +2380,15 @@ function renderFeaturedProducts() {
             <span class="product-card-weight">${defaultSize.weight || product.weight || 'Standard'}</span>
           </div>
           <div class="product-card-actions">
-            <button class="btn-card-add" onclick="addToCart('${product.id}', '${defaultSize.weight}', ${defaultSize.price})">
-              <i class="fa-solid fa-cart-shopping"></i> Add
-            </button>
+            ${isOutOfStock ? `
+              <button class="btn-card-add btn-card-out-of-stock" disabled title="This item is currently out of stock">
+                <i class="fa-solid fa-ban"></i> Out of Stock
+              </button>
+            ` : `
+              <button class="btn-card-add" onclick="addToCart('${product.id}', '${defaultSize.weight}', ${defaultSize.price})">
+                <i class="fa-solid fa-cart-shopping"></i> Add
+              </button>
+            `}
             <button class="btn-card-wishlist ${isWishlisted ? 'active' : ''}" onclick="toggleWishlist('${product.id}')" title="Wishlist" aria-label="Add to Wishlist">
               <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
             </button>

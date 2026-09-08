@@ -164,7 +164,7 @@ router.post('/orders', async (req, res) => {
         const itemsJson = typeof items === 'string' ? items : JSON.stringify(items);
         const result = await db.runAsync(`
             INSERT INTO orders (order_number, customer_name, customer_email, customer_phone, items_json, total_amount, shipping_address, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'CONFIRMED')
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')
         `, [orderNumber, customerName.trim(), customerEmail.trim().toLowerCase(), customerPhone || '', itemsJson, parseFloat(totalAmount) || 0, shippingAddress]);
 
         const orderId = result.lastID;
@@ -192,7 +192,7 @@ router.post('/orders', async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Order placed successfully!',
+            message: 'Order placed successfully! Waiting for confirmation from the admin.',
             orderId: orderId,
             orderNumber: orderNumber,
             order: newOrder ? {
@@ -204,7 +204,7 @@ router.post('/orders', async (req, res) => {
                 items: parsedItems,
                 totalAmount: newOrder.total_amount,
                 shippingAddress: newOrder.shipping_address,
-                status: newOrder.status,
+                status: newOrder.status || 'PENDING',
                 createdAt: newOrder.created_at
             } : null
         });
@@ -249,7 +249,7 @@ router.get('/orders', async (req, res) => {
                 items: items,
                 totalAmount: row.total_amount,
                 shippingAddress: row.shipping_address,
-                status: row.status || 'CONFIRMED',
+                status: row.status || 'PENDING',
                 createdAt: row.created_at
             };
         });

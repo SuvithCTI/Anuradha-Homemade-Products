@@ -136,7 +136,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
             ingredients || '',
             benefitsToSave,
             sizesToSave,
-            inStock !== false ? 1 : 0,
+            (inStock === true || inStock === 1 || inStock === '1' || inStock === 'true' || inStock === undefined) ? 1 : 0,
             featured ? 1 : 0
         ]);
 
@@ -185,7 +185,9 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
         const newImage = image !== undefined && image ? image : existing.image;
         const newDesc = description !== undefined ? description : (existing.description || '');
         const newIngredients = ingredients !== undefined ? ingredients : (existing.ingredients || '');
-        const newInStock = inStock !== undefined ? (inStock ? 1 : 0) : existing.in_stock;
+        const newInStock = inStock !== undefined 
+            ? (inStock === true || inStock === 1 || inStock === '1' || inStock === 'true' ? 1 : 0) 
+            : existing.in_stock;
         const newFeatured = featured !== undefined ? (featured ? 1 : 0) : existing.featured;
 
         await db.runAsync(`
