@@ -16,25 +16,57 @@ document.addEventListener("DOMContentLoaded", () => {
     const alertBox = document.getElementById("alert-box");
     const alertText = document.getElementById("alert-text");
 
-    // Fetch user details from StorageService
-    function loadUserProfile() {
-        const user = window.StorageService ? window.StorageService.getCurrentUser() : null;
+    const profilePhone = document.getElementById("profile-phone");
+
+    const API_BASE = (window.location.port === '5000' || (window.location.protocol === 'https:' && !window.location.port))
+        ? window.location.origin
+        : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : window.location.origin);
+    const authToken = localStorage.getItem('auth_token');
+
+    // Fetch user details from API / StorageService
+    async function loadUserProfile() {
+        let user = null;
+
+        if (authToken) {
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                const data = await res.json();
+                if (data.success && data.user) {
+                    user = data.user;
+                    localStorage.setItem('anuradha_current_user', JSON.stringify(user));
+                }
+            } catch (err) {
+                console.warn('API profile fetch error:', err);
+            }
+        }
+
+        if (!user) {
+            user = window.StorageService ? window.StorageService.getCurrentUser() : null;
+            if (!user) {
+                try {
+                    const stored = localStorage.getItem('anuradha_current_user');
+                    if (stored) user = JSON.parse(stored);
+                } catch (e) {}
+            }
+        }
 
         if (user) {
             if (userDisplayName) userDisplayName.textContent = user.firstName || "Customer";
             if (profileFirst) profileFirst.value = user.firstName || "";
             if (profileLast) profileLast.value = user.lastName || "";
+            if (profilePhone) profilePhone.value = user.phone || "";
             if (profileEmail) profileEmail.value = user.email || "";
         } else {
-            // If unauthorized, redirect to login page
             console.warn("Unauthenticated session, redirecting to login...");
             window.location.href = "../login.html";
         }
     }
 
-    // Profile form submission (Edit Name)
+    // Profile form submission (Edit Name & Phone)
     if (profileForm) {
-        profileForm.addEventListener("submit", (e) => {
+        profileForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             hideAlert();
             if (firstNameError) firstNameError.style.display = "none";
@@ -42,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const firstName = profileFirst ? profileFirst.value.trim() : "";
             const lastName = profileLast ? profileLast.value.trim() : "";
+            const phone = profilePhone ? profilePhone.value.trim() : "";
 
             if (!firstName) {
                 if (firstNameError) {
@@ -54,17 +87,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setSaveLoading(true);
 
-            setTimeout(() => {
-                const res = window.StorageService ? window.StorageService.updateProfile(firstName, lastName) : { success: false, message: 'Storage unavailable' };
-
-                if (res.success) {
-                    if (userDisplayName) userDisplayName.textContent = res.user.firstName;
-                    showAlert("success", "Name updated successfully!");
-                } else {
-                    showAlert("error", res.message || "Failed to update profile.");
+            if (authToken) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/auth/profile`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + authToken
+                        },
+                        body: JSON.stringify({ firstName, lastName, phone })
+                    });
+                    const data = await res.json();
+                    if (data.success && data.user) {
+                        localStorage.setItem('anuradha_current_user', JSON.stringify(data.user));
+                        if (window.StorageService) window.StorageService.updateProfile(firstName, lastName);
+                        if (userDisplayName) userDisplayName.textContent = data.user.firstName;
+                        showAlert("success", "Profile updated successfully!");
+                        setSaveLoading(false);
+                        return;
+                    }
+                } catch (err) {
+                    console.warn('API update failed, trying local storage:', err);
                 }
-                setSaveLoading(false);
-            }, 300);
+            }
+
+            const res = window.StorageService ? window.StorageService.updateProfile(firstName, lastName) : { success: false, message: 'Storage unavailable' };
+            if (res.success) {
+                if (userDisplayName) userDisplayName.textContent = res.user.firstName;
+                showAlert("success", "Profile updated successfully!");
+            } else {
+                showAlert("error", res.message || "Failed to update profile.");
+            }
+            setSaveLoading(false);
         });
     }
 
@@ -74,6 +128,8 @@ document.addEventListener("DOMContentLoaded", () => {
             setLogoutLoading(true);
             hideAlert();
 
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('anuradha_current_user');
             if (window.StorageService) {
                 window.StorageService.logout();
             }

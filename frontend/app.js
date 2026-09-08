@@ -5,9 +5,9 @@ let currentFilter = 'all';
 let searchQuery = '';
 let currentSort = 'default';
 let activeReviewIndex = 0;
-const BACKEND_API_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-  ? (window.location.port === "8080" ? "" : "http://localhost:8080")
-  : "https://anuradha-homemade-products.onrender.com";
+const BACKEND_API_URL = (window.location.port === "5000" || (window.location.protocol === "https:" && !window.location.port))
+  ? window.location.origin
+  : (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:5000" : window.location.origin);
 
 let isAuthenticated = false;
 
@@ -54,17 +54,193 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function checkAuthStatus() {
-  const user = window.StorageService ? window.StorageService.getCurrentUser() : null;
+  let user = null;
+  const token = localStorage.getItem('auth_token');
+  try {
+    const stored = localStorage.getItem('anuradha_current_user');
+    if (stored) user = JSON.parse(stored);
+  } catch (e) {}
 
-  if (user) {
+  if (!user && window.StorageService) {
+    user = window.StorageService.getCurrentUser();
+  }
+
+  const userBtn = document.getElementById('user-btn');
+  if (!userBtn) return;
+
+  // Ensure parent wrapper exists
+  let wrapper = userBtn.closest('.user-menu-wrapper');
+  if (!wrapper) {
+    wrapper = document.createElement('div');
+    wrapper.className = 'user-menu-wrapper';
+    userBtn.parentNode.insertBefore(wrapper, userBtn);
+    wrapper.appendChild(userBtn);
+  }
+
+  // Remove stale dropdown if any
+  const existingDropdown = wrapper.querySelector('.user-dropdown-menu');
+  if (existingDropdown) existingDropdown.remove();
+
+  if (user && (token || user.email)) {
     isAuthenticated = true;
-    const userBtn = document.getElementById('user-btn');
-    if (userBtn) {
-      userBtn.href = 'customer/dashboard.html';
-      userBtn.title = user.firstName ? `Dashboard (${user.firstName})` : 'Go to Dashboard';
-    }
+    const initial = (user.firstName ? user.firstName.charAt(0) : (user.email ? user.email.charAt(0) : 'U')).toUpperCase();
+    const displayName = user.firstName ? user.firstName : (user.email ? user.email.split('@')[0] : 'User');
+    const isAdmin = user.role === 'ADMIN';
+
+    userBtn.className = 'user-profile-pill';
+    userBtn.removeAttribute('href');
+    userBtn.setAttribute('role', 'button');
+    userBtn.setAttribute('aria-label', 'Open Profile Menu');
+    userBtn.title = `Signed in as ${user.email}`;
+    userBtn.innerHTML = `
+      <div class="user-pill-avatar">${initial}</div>
+      <span class="user-pill-name">${isAdmin ? 'Admin' : displayName}</span>
+      <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #166534; margin-left: 2px;"></i>
+    `;
+
+    // Create dropdown menu
+    const dropdown = document.createElement('div');
+    dropdown.className = 'user-dropdown-menu';
+    dropdown.innerHTML = `
+      <div class="user-dropdown-header">
+        <strong>${user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}</strong>
+        <span>${user.email}</span>
+      </div>
+      ${isAdmin ? `
+        <a href="admin/dashboard.html" class="user-dropdown-item">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>Admin Dashboard</span>
+        </a>
+      ` : `
+        <a href="customer/dashboard.html" class="user-dropdown-item">
+          <i class="fa-solid fa-user-gear"></i>
+          <span>My Profile</span>
+        </a>
+        <button type="button" class="user-dropdown-item" id="menu-view-orders">
+          <i class="fa-solid fa-box-open"></i>
+          <span>My Orders</span>
+        </button>
+        <button type="button" class="user-dropdown-item" id="menu-view-cart">
+          <i class="fa-solid fa-basket-shopping"></i>
+          <span>My Cart</span>
+        </button>
+        <button type="button" class="user-dropdown-item" id="menu-view-wishlist">
+          <i class="fa-solid fa-heart"></i>
+          <span>My Wishlist</span>
+        </button>
+      `}
+      <button type="button" class="user-dropdown-item text-danger" id="menu-btn-logout">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span>Sign Out</span>
+      </button>
+    `;
+    wrapper.appendChild(dropdown);
+
+    // Dropdown toggle
+    userBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropdown.classList.toggle('active');
+    };
+
+    dropdown.querySelector('#menu-view-orders')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.remove('active');
+      document.getElementById('orders-btn')?.click();
+    });
+
+    dropdown.querySelector('#menu-view-cart')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.remove('active');
+      document.getElementById('cart-btn')?.click();
+    });
+
+    dropdown.querySelector('#menu-view-wishlist')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.remove('active');
+      document.getElementById('wishlist-btn')?.click();
+    });
+
+    dropdown.querySelector('#menu-btn-logout')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('anuradha_current_user');
+      if (window.StorageService) window.StorageService.logout();
+      showToast('Signed out successfully');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrapper.contains(e.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
   } else {
     isAuthenticated = false;
+    userBtn.className = 'nav-action-btn';
+    userBtn.href = 'login.html';
+    userBtn.title = 'Sign In';
+    userBtn.setAttribute('aria-label', 'Sign In');
+    userBtn.innerHTML = `<i class="fa-regular fa-user"></i>`;
+    userBtn.onclick = null;
+  }
+
+  // Update Mobile Navigation Drawer with User Profile / Login status
+  const navMenu = document.querySelector('.nav-menu');
+  if (navMenu) {
+    const existingMobileUser = navMenu.querySelector('.mobile-user-section');
+    if (existingMobileUser) existingMobileUser.remove();
+
+    const mobileSection = document.createElement('li');
+    mobileSection.className = 'mobile-user-section';
+
+    if (user && (token || user.email)) {
+      const initial = (user.firstName ? user.firstName.charAt(0) : (user.email ? user.email.charAt(0) : 'U')).toUpperCase();
+      const displayName = user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user.email ? user.email.split('@')[0] : 'User');
+      const isAdmin = user.role === 'ADMIN';
+
+      mobileSection.innerHTML = `
+        <div class="mobile-user-card">
+          <div class="mobile-user-avatar">${initial}</div>
+          <div class="mobile-user-info">
+            <div class="mobile-user-name">${displayName}</div>
+            <div class="mobile-user-role">${isAdmin ? '🛡️ Administrator' : '🌿 Verified Customer'}</div>
+          </div>
+        </div>
+        <div class="mobile-user-actions">
+          <a href="${isAdmin ? 'admin/dashboard.html' : 'customer/dashboard.html'}" class="btn-mobile-nav-profile">
+            <i class="fa-solid fa-${isAdmin ? 'gauge-high' : 'user-gear'}"></i>
+            <span>${isAdmin ? 'Admin Panel' : 'My Profile'}</span>
+          </a>
+          <button type="button" class="btn-mobile-nav-logout" id="mobile-drawer-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      `;
+      navMenu.insertBefore(mobileSection, navMenu.firstChild);
+
+      mobileSection.querySelector('#mobile-drawer-logout')?.addEventListener('click', () => {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('anuradha_current_user');
+        if (window.StorageService) window.StorageService.logout();
+        showToast('Signed out successfully');
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      });
+    } else {
+      mobileSection.innerHTML = `
+        <a href="login.html" class="btn-mobile-nav-login">
+          <i class="fa-regular fa-user"></i>
+          <span>Sign In / Register</span>
+        </a>
+      `;
+      navMenu.insertBefore(mobileSection, navMenu.firstChild);
+    }
   }
 }
 
@@ -86,6 +262,57 @@ function getCatalogProducts() {
   return [];
 }
 
+function applyProductsList(rawList) {
+  if (!rawList || !rawList.length) return;
+  window.PRODUCTS = rawList.map(p => {
+    let sizes = [];
+    if (Array.isArray(p.sizes) && p.sizes.length > 0) {
+      sizes = p.sizes;
+    } else if (p.sizesJson) {
+      try {
+        sizes = typeof p.sizesJson === 'string' ? JSON.parse(p.sizesJson) : p.sizesJson;
+      } catch (e) {
+        sizes = [{ weight: "Standard", price: p.price }];
+      }
+    } else {
+      sizes = [{ weight: "Standard", price: p.price }];
+    }
+
+    let benefits = [];
+    if (Array.isArray(p.benefits)) {
+      benefits = p.benefits;
+    } else if (p.benefits) {
+      try {
+        benefits = typeof p.benefits === 'string' && p.benefits.startsWith('[') ? JSON.parse(p.benefits) : [p.benefits];
+      } catch (e) {
+        benefits = [p.benefits];
+      }
+    } else {
+      benefits = ["100% pure, natural, and preservative-free."];
+    }
+
+    const basePrice = (sizes[0] && sizes[0].price) ? sizes[0].price : p.price;
+
+    return {
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      price: basePrice,
+      rating: p.rating || 5.0,
+      reviewsCount: p.reviewsCount || 0,
+      image: p.image || 'images/healthy-mix.jpg',
+      description: p.description || "",
+      ingredients: p.ingredients || "",
+      benefits: benefits,
+      sizes: sizes,
+      inStock: p.inStock !== false,
+      featured: p.featured === true
+    };
+  });
+  renderProducts();
+  renderFeaturedProducts();
+}
+
 function loadProductsFromBackend() {
   try {
     let rawList = [];
@@ -100,54 +327,23 @@ function loadProductsFromBackend() {
       }
     }
     if (rawList && rawList.length > 0) {
-      window.PRODUCTS = rawList.map(p => {
-        let sizes = [];
-        if (Array.isArray(p.sizes) && p.sizes.length > 0) {
-          sizes = p.sizes;
-        } else if (p.sizesJson) {
-          try {
-            sizes = typeof p.sizesJson === 'string' ? JSON.parse(p.sizesJson) : p.sizesJson;
-          } catch (e) {
-            sizes = [{ weight: "Standard", price: p.price }];
-          }
-        } else {
-          sizes = [{ weight: "Standard", price: p.price }];
-        }
-
-        let benefits = [];
-        if (Array.isArray(p.benefits)) {
-          benefits = p.benefits;
-        } else if (p.benefits) {
-          try {
-            benefits = typeof p.benefits === 'string' && p.benefits.startsWith('[') ? JSON.parse(p.benefits) : [p.benefits];
-          } catch (e) {
-            benefits = [p.benefits];
-          }
-        } else {
-          benefits = ["100% pure, natural, and preservative-free."];
-        }
-
-        const basePrice = (sizes[0] && sizes[0].price) ? sizes[0].price : p.price;
-
-        return {
-          id: p.id,
-          name: p.name,
-          category: p.category,
-          price: basePrice,
-          rating: p.rating || 5.0,
-          reviewsCount: p.reviewsCount || 0,
-          image: p.image || 'images/healthy-mix.jpg',
-          description: p.description || "",
-          ingredients: p.ingredients || "",
-          benefits: benefits,
-          sizes: sizes,
-          inStock: p.inStock !== false,
-          featured: p.featured === true
-        };
-      });
-      renderProducts();
-      renderFeaturedProducts();
+      applyProductsList(rawList);
     }
+
+    // Connect to Node/Express SQLite API for live products
+    fetch(`${BACKEND_API_URL}/api/products`)
+      .then(res => res.json())
+      .then(apiProducts => {
+        if (Array.isArray(apiProducts) && apiProducts.length > 0) {
+          applyProductsList(apiProducts);
+          if (window.StorageService) {
+            window.StorageService.saveProducts(apiProducts);
+          }
+        }
+      })
+      .catch(err => {
+        console.log('Using local products cache:', err.message);
+      });
   } catch (err) {
     console.warn("Products normalization error:", err);
   }
@@ -176,6 +372,7 @@ function initApp() {
   
   updateCartUI();
   updateWishlistUI();
+  updateOrdersCountBadge();
   renderReviews();
 
   // Initialize the drag-and-drop alchemy mixer
@@ -270,20 +467,38 @@ function setupEventListeners() {
   // Mobile Hamburger Toggle
   const menuToggle = document.querySelector('.menu-toggle');
   const navMenu = document.querySelector('.nav-menu');
+  const overlay = document.getElementById('drawer-overlay');
+
   if (menuToggle && navMenu) {
     menuToggle.addEventListener('click', () => {
-      navMenu.classList.toggle('active');
+      const isOpen = navMenu.classList.toggle('active');
+      if (overlay) {
+        if (isOpen) {
+          overlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        } else {
+          overlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }
       const icon = menuToggle.querySelector('i');
       if (icon) {
-        icon.classList.toggle('fa-bars');
-        icon.classList.toggle('fa-xmark');
+        if (isOpen) {
+          icon.classList.remove('fa-bars');
+          icon.classList.add('fa-xmark');
+        } else {
+          icon.classList.remove('fa-xmark');
+          icon.classList.add('fa-bars');
+        }
       }
     });
 
     // Close menu on click of nav items
-    document.querySelectorAll('.nav-link').forEach(link => {
+    document.querySelectorAll('.nav-link, .btn-mobile-nav-profile, .btn-mobile-nav-login').forEach(link => {
       link.addEventListener('click', () => {
         navMenu.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
         const icon = menuToggle.querySelector('i');
         if (icon) {
           icon.classList.add('fa-bars');
@@ -291,11 +506,25 @@ function setupEventListeners() {
         }
       });
     });
+
+    if (overlay) {
+      overlay.addEventListener('click', () => {
+        navMenu.classList.remove('active');
+        document.querySelectorAll('.user-dropdown-menu').forEach(d => d.classList.remove('active'));
+        document.body.style.overflow = '';
+        const icon = menuToggle.querySelector('i');
+        if (icon) {
+          icon.classList.add('fa-bars');
+          icon.classList.remove('fa-xmark');
+        }
+      });
+    }
   }
 
   // Drawers Open/Close
   setupDrawerListeners('cart-btn', 'cart-drawer', 'cart-close');
   setupDrawerListeners('wishlist-btn', 'wishlist-drawer', 'wishlist-close');
+  setupDrawerListeners('orders-btn', 'orders-drawer', 'orders-close');
 
   // Search Input
   const searchInput = document.getElementById('search-input');
@@ -380,11 +609,28 @@ function setupEventListeners() {
       const input = form.querySelector('input[type="email"]');
       if (!input || !input.value.trim()) return;
       const email = input.value.trim();
+
+      // Submit to backend API
+      fetch(`${BACKEND_API_URL}/api/newsletter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      .then(res => res.json())
+      .then(data => {
+        showFloatingToast(data.message || 'Subscribed to newsletter!');
+      })
+      .catch(() => {
+        if (window.StorageService) {
+          const res = window.StorageService.addNewsletter(email);
+          showFloatingToast(res.message || 'Subscribed to newsletter!');
+        } else {
+          showFloatingToast('Subscribed to newsletter!');
+        }
+      });
+
       if (window.StorageService) {
-        const res = window.StorageService.addNewsletter(email);
-        showFloatingToast(res.message || 'Subscribed to newsletter!');
-      } else {
-        showFloatingToast('Subscribed to newsletter!');
+        window.StorageService.addNewsletter(email);
       }
       form.reset();
     });
@@ -407,13 +653,19 @@ function setupDrawerListeners(triggerId, drawerId, closeId) {
   if (trigger && drawer && close && overlay) {
     const openDrawer = (e) => {
       if (e) e.preventDefault();
+
+      // Trigger dynamic render for orders drawer
+      if (drawerId === 'orders-drawer') {
+        renderOrdersDrawer();
+      }
+
       drawer.classList.add('open');
       overlay.classList.add('active');
       
-      // Close other drawers if open
-      const otherDrawerId = drawerId === 'cart-drawer' ? 'wishlist-drawer' : 'cart-drawer';
-      const otherDrawer = document.getElementById(otherDrawerId);
-      if (otherDrawer) otherDrawer.classList.remove('open');
+      // Close all other drawers if open
+      document.querySelectorAll('.drawer').forEach(d => {
+        if (d.id !== drawerId) d.classList.remove('open');
+      });
     };
 
     const closeDrawer = () => {
@@ -677,23 +929,79 @@ window.toggleWishlistFromModal = function(id) {
   if (modal) modal.classList.remove('open');
 };
 
-// Wishlist Logic
-window.toggleWishlist = function(id) {
-  if (!isAuthenticated) {
-    showFloatingToast('Please sign in to add to wishlist!');
-    sessionStorage.setItem('redirectAfterLogin', window.location.href);
-    setTimeout(() => {
-      window.location.href = 'login.html';
-    }, 1500);
-    return;
+// Helper to get active shopper info (Customer or Guest)
+function getShopperInfo() {
+  const user = window.StorageService ? window.StorageService.getCurrentUser() : null;
+  const localEmail = localStorage.getItem('user_email');
+  const localName = localStorage.getItem('user_name');
+  const localPhone = localStorage.getItem('user_phone');
+  
+  if (user && user.email) {
+    return {
+      email: user.email,
+      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email.split('@')[0],
+      phone: user.phone || ''
+    };
   }
+  if (localEmail) {
+    return {
+      email: localEmail,
+      name: localName || 'Shopper',
+      phone: localPhone || ''
+    };
+  }
+  let guestId = localStorage.getItem('guest_shopper_id');
+  if (!guestId) {
+    guestId = 'guest_' + Math.random().toString(36).substring(2, 8);
+    localStorage.setItem('guest_shopper_id', guestId);
+  }
+  return {
+    email: `${guestId}@shopper.anuradhaorganics.com`,
+    name: `Shopper (${guestId.slice(6)})`,
+    phone: ''
+  };
+}
+
+// Wishlist Logic with Backend API Sync
+window.toggleWishlist = async function(id) {
+  const shopper = getShopperInfo();
+  const product = (window.PRODUCTS || []).find(p => p.id === id);
   const index = wishlist.indexOf(id);
+
   if (index === -1) {
     wishlist.push(id);
     showFloatingToast('Added to Wishlist!');
+
+    if (product) {
+      const defaultSize = (product.sizes && product.sizes.length) ? product.sizes[0] : { weight: product.weight || 'Standard', price: product.price };
+      try {
+        await fetch(`${BACKEND_API_URL}/api/wishlist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerEmail: shopper.email,
+            customerName: shopper.name,
+            productId: product.id,
+            productName: product.name,
+            productPrice: defaultSize.price,
+            productImage: product.image
+          })
+        });
+      } catch (e) {
+        console.warn('Backend wishlist sync error:', e);
+      }
+    }
   } else {
     wishlist.splice(index, 1);
     showFloatingToast('Removed from Wishlist');
+
+    try {
+      await fetch(`${BACKEND_API_URL}/api/wishlist?email=${encodeURIComponent(shopper.email)}&productId=${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+    } catch (e) {
+      console.warn('Backend wishlist removal error:', e);
+    }
   }
 
   localStorage.setItem('aho_wishlist', JSON.stringify(wishlist));
@@ -724,7 +1032,7 @@ function updateWishlistUI() {
   }
 
   wishlist.forEach(id => {
-    const product = window.PRODUCTS.find(p => p.id === id);
+    const product = (window.PRODUCTS || []).find(p => p.id === id);
     if (!product) return;
 
     const defaultSize = product.sizes ? product.sizes[0] : { weight: product.weight, price: product.price };
@@ -750,25 +1058,192 @@ function updateWishlistUI() {
   });
 }
 
-window.moveWishlistToCart = function(id, weight, price) {
-  addToCart(id, weight, price);
-  // Remove from wishlist
-  toggleWishlist(id);
-};
+// Fetch Customer Orders (Backend API + Local Storage Sync)
+async function fetchCustomerOrders() {
+  const shopper = getShopperInfo();
+  let orders = [];
 
-// Cart Logic
-window.addToCart = function(id, weight, price) {
-  if (!isAuthenticated) {
-    showFloatingToast('Please sign in to add items to cart!');
-    sessionStorage.setItem('redirectAfterLogin', window.location.href);
-    setTimeout(() => {
-      window.location.href = 'login.html';
-    }, 1500);
+  // 1. Try fetching from Backend API
+  if (shopper && (shopper.email || shopper.phone)) {
+    try {
+      const query = shopper.email ? `email=${encodeURIComponent(shopper.email)}` : `phone=${encodeURIComponent(shopper.phone)}`;
+      const res = await fetch(`${BACKEND_API_URL}/api/orders?${query}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          orders = data;
+        } else if (data && Array.isArray(data.orders)) {
+          orders = data.orders;
+        }
+      }
+    } catch (e) {
+      console.warn('Backend orders fetch notice:', e);
+    }
+  }
+
+  // 2. Merge with locally cached orders
+  try {
+    const local = JSON.parse(localStorage.getItem('aho_customer_orders') || '[]');
+    if (Array.isArray(local) && local.length > 0) {
+      const existingIds = new Set(orders.map(o => String(o.orderNumber || o.id)));
+      local.forEach(lo => {
+        const key = String(lo.orderNumber || lo.id);
+        if (!existingIds.has(key)) {
+          orders.push(lo);
+          existingIds.add(key);
+        }
+      });
+    }
+  } catch (e) {}
+
+  // Sort descending by date
+  orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
+
+  return orders;
+}
+
+// Update Orders Count Badge in Header Navigation
+async function updateOrdersCountBadge() {
+  const badge = document.getElementById('orders-count');
+  if (!badge) return;
+
+  try {
+    const orders = await fetchCustomerOrders();
+    const count = orders.length;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  } catch (e) {
+    badge.style.display = 'none';
+  }
+}
+
+// Render Orders in Orders Drawer
+async function renderOrdersDrawer() {
+  const container = document.getElementById('orders-items-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
+      <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--primary); margin-bottom: 12px; display: block;"></i>
+      <p style="font-size: 0.9rem;">Fetching your orders...</p>
+    </div>
+  `;
+
+  const orders = await fetchCustomerOrders();
+  
+  // Refresh badge as well
+  const badge = document.getElementById('orders-count');
+  if (badge) {
+    badge.textContent = orders.length;
+    badge.style.display = orders.length > 0 ? 'flex' : 'none';
+  }
+
+  if (!orders || orders.length === 0) {
+    container.innerHTML = `
+      <div class="empty-cart-message" style="padding: 30px 10px; text-align: center;">
+        <i class="fa-solid fa-box-open" style="color: #cbd5e1; font-size: 3.5rem; margin-bottom: 16px; display: block;"></i>
+        <h4 style="color: var(--text-dark); margin-bottom: 6px; font-size: 1.1rem; font-family: 'Playfair Display', serif;">No Orders Placed Yet</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 250px; margin: 0 auto 18px; line-height: 1.4;">Your handcrafted organic favorites will appear right here once placed.</p>
+        <a href="shop.html" class="btn btn-primary" onclick="const d = document.getElementById('orders-drawer'); if(d) d.classList.remove('open'); const o = document.getElementById('drawer-overlay'); if(o) o.classList.remove('active');" style="padding: 10px 20px; font-size: 0.88rem; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-cart-shopping"></i> Start Shopping
+        </a>
+      </div>
+    `;
     return;
   }
-  const product = window.PRODUCTS.find(p => p.id === id);
+
+  let html = '<div class="orders-drawer-list">';
+  orders.forEach(order => {
+    const orderNum = order.orderNumber || `#AHO-${order.id || 'ORDER'}`;
+    const dateStr = order.createdAt 
+      ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+      : 'Recently placed';
+    
+    const status = (order.status || 'CONFIRMED').toUpperCase();
+    let statusClass = 'orders-status-confirmed';
+    let statusIcon = '🟢';
+    if (status === 'SHIPPED') {
+      statusClass = 'orders-status-shipped';
+      statusIcon = '🚚';
+    } else if (status === 'DELIVERED') {
+      statusClass = 'orders-status-delivered';
+      statusIcon = '📦';
+    }
+
+    let items = order.items;
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+
+    const itemsHtml = items.map(item => {
+      let img = item.image || item.productImage || 'images/healthy-mix.jpg';
+      const weight = item.weight ? `(${item.weight})` : '';
+      const qty = item.quantity || 1;
+      const lineTotal = (parseFloat(item.price) || 0) * qty;
+      const itemName = item.name || item.productName || 'Organic Product';
+      return `
+        <div class="orders-drawer-item">
+          <img src="${img}" class="orders-drawer-item-img" alt="${itemName}" onerror="this.src='images/healthy-mix.jpg'">
+          <div class="orders-drawer-item-info">
+            <div class="orders-drawer-item-name" title="${itemName}">${itemName}</div>
+            <div class="orders-drawer-item-sub">Qty: <strong>${qty}</strong> ${weight}</div>
+          </div>
+          <div class="orders-drawer-item-price">Rs. ${lineTotal}</div>
+        </div>
+      `;
+    }).join('');
+
+    const total = order.totalAmount || order.total || 0;
+    const address = order.shippingAddress || '';
+    const whatsappEnquiryUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hello Anuradha Homemade Organics, I would like an update regarding my Order #${orderNum}`)}`;
+
+    html += `
+      <div class="orders-drawer-card">
+        <div class="orders-drawer-header">
+          <div>
+            <div class="orders-drawer-id"><i class="fa-solid fa-receipt" style="color: var(--primary); margin-right: 5px;"></i> ${orderNum}</div>
+            <div class="orders-drawer-date">${dateStr}</div>
+          </div>
+          <span class="orders-drawer-status ${statusClass}">${statusIcon} ${status}</span>
+        </div>
+        <div class="orders-drawer-items">
+          ${itemsHtml || '<div style="font-size:0.8rem; color:#64748b;">No item details available</div>'}
+        </div>
+        ${address ? `<div style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: flex-start; gap: 6px;"><i class="fa-solid fa-location-dot" style="margin-top: 2px; color: var(--primary);"></i> <span>${address}</span></div>` : ''}
+        <div class="orders-drawer-footer-row">
+          <a href="${whatsappEnquiryUrl}" target="_blank" style="font-size: 0.78rem; color: #16a34a; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            <i class="fa-brands fa-whatsapp"></i> Order Support
+          </a>
+          <div style="text-align: right;">
+            <span style="font-size: 0.78rem; color: var(--text-muted); margin-right: 4px;">Total:</span>
+            <span class="orders-drawer-total">Rs. ${total}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+window.fetchCustomerOrders = fetchCustomerOrders;
+window.updateOrdersCountBadge = updateOrdersCountBadge;
+window.renderOrdersDrawer = renderOrdersDrawer;
+
+window.moveWishlistToCart = async function(id, weight, price) {
+  await addToCart(id, weight, price);
+  // Remove from wishlist
+  await toggleWishlist(id);
+};
+
+// Cart Logic with Backend API Sync
+window.addToCart = async function(id, weight, price) {
+  const product = (window.PRODUCTS || []).find(p => p.id === id);
   if (!product) return;
 
+  const shopper = getShopperInfo();
   const cartKey = `${id}-${weight}`;
   const existingItem = cart.find(item => item.cartKey === cartKey);
 
@@ -789,6 +1264,26 @@ window.addToCart = function(id, weight, price) {
   localStorage.setItem('aho_cart', JSON.stringify(cart));
   updateCartUI();
   showFloatingToast('Added to Cart!');
+
+  try {
+    await fetch(`${BACKEND_API_URL}/api/cart`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerEmail: shopper.email,
+        customerName: shopper.name,
+        customerPhone: shopper.phone,
+        productId: product.id,
+        productName: product.name,
+        productImage: product.image,
+        weight: weight,
+        price: price,
+        quantity: 1
+      })
+    });
+  } catch (e) {
+    console.warn('Backend cart sync error:', e);
+  }
 };
 
 function updateCartUI() {
@@ -848,24 +1343,64 @@ function updateCartUI() {
   updateSummary(subtotal);
 }
 
-window.updateQty = function(cartKey, change) {
+window.updateQty = async function(cartKey, change) {
   const item = cart.find(item => item.cartKey === cartKey);
   if (!item) return;
 
   item.quantity += change;
+  const newQty = item.quantity;
   if (item.quantity <= 0) {
     cart = cart.filter(i => i.cartKey !== cartKey);
   }
 
   localStorage.setItem('aho_cart', JSON.stringify(cart));
   updateCartUI();
+
+  const shopper = getShopperInfo();
+  try {
+    if (newQty > 0) {
+      await fetch(`${BACKEND_API_URL}/api/cart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerEmail: shopper.email,
+          customerName: shopper.name,
+          customerPhone: shopper.phone,
+          productId: item.id,
+          productName: item.name,
+          productImage: item.image,
+          weight: item.weight,
+          price: item.price,
+          quantity: change
+        })
+      });
+    } else {
+      await fetch(`${BACKEND_API_URL}/api/cart?email=${encodeURIComponent(shopper.email)}&productId=${encodeURIComponent(item.id)}`, {
+        method: 'DELETE'
+      });
+    }
+  } catch (e) {
+    console.warn('Backend updateQty sync error:', e);
+  }
 };
 
-window.removeCartItem = function(cartKey) {
+window.removeCartItem = async function(cartKey) {
+  const item = cart.find(item => item.cartKey === cartKey);
   cart = cart.filter(item => item.cartKey !== cartKey);
   localStorage.setItem('aho_cart', JSON.stringify(cart));
   updateCartUI();
   showFloatingToast('Removed from Cart');
+
+  if (item) {
+    const shopper = getShopperInfo();
+    try {
+      await fetch(`${BACKEND_API_URL}/api/cart?email=${encodeURIComponent(shopper.email)}&productId=${encodeURIComponent(item.id)}`, {
+        method: 'DELETE'
+      });
+    } catch (e) {
+      console.warn('Backend removeCartItem sync error:', e);
+    }
+  }
 };
 
 function updateSummary(subtotal) {
@@ -1051,15 +1586,194 @@ function handleCheckoutSubmit(e) {
   const encodedText = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedText}`;
 
-  // Close modal and clear cart
+  // Sync order and address to backend database
+  const shopper = getShopperInfo();
+  const customerEmail = shopper.email.includes('guest_') ? `${phone || 'customer'}@shopper.anuradhaorganics.com` : shopper.email;
+  const orderedCart = [...cart]; // Preserve snapshot of ordered cart
+  
+  let orderNumber = 'AHO-' + Math.floor(100000 + Math.random() * 900000);
+  let backendOrder = null;
+
+  (async () => {
+    try {
+      // 1. Submit Order
+      const res = await fetch(`${BACKEND_API_URL}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: name,
+          customerEmail: customerEmail,
+          customerPhone: phone,
+          items: orderedCart,
+          totalAmount: total,
+          shippingAddress: `${address}, ${city} - ${pincode}`
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.orderNumber) orderNumber = data.orderNumber;
+        if (data.order) backendOrder = data.order;
+      }
+
+      // 2. Submit Delivery Address
+      await fetch(`${BACKEND_API_URL}/api/addresses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: name,
+          customerEmail: customerEmail,
+          customerPhone: phone,
+          streetAddress: address,
+          city: city,
+          state: 'Tamil Nadu',
+          pincode: pincode,
+          addressType: 'Home'
+        })
+      });
+
+      // 3. Clear active cart in backend
+      await fetch(`${BACKEND_API_URL}/api/cart?email=${encodeURIComponent(shopper.email)}`, {
+        method: 'DELETE'
+      });
+
+      // 4. Remove ordered items from backend wishlist if present
+      for (const item of orderedCart) {
+        if (item.id) {
+          await fetch(`${BACKEND_API_URL}/api/wishlist?email=${encodeURIComponent(shopper.email)}&productId=${encodeURIComponent(item.id)}`, {
+            method: 'DELETE'
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Backend order placement sync error:', err);
+    }
+
+    // Save to local placed orders cache for immediate visibility in Customer Dashboard
+    try {
+      const localPlaced = JSON.parse(localStorage.getItem('aho_customer_orders') || '[]');
+      const newPlacedItem = backendOrder || {
+        orderNumber: orderNumber,
+        customerName: name,
+        customerEmail: customerEmail,
+        customerPhone: phone,
+        items: orderedCart,
+        totalAmount: total,
+        shippingAddress: `${address}, ${city} - ${pincode}`,
+        status: 'CONFIRMED',
+        createdAt: new Date().toISOString()
+      };
+      localPlaced.unshift(newPlacedItem);
+      localStorage.setItem('aho_customer_orders', JSON.stringify(localPlaced));
+    } catch (e) {}
+  })();
+
+  // Remove ordered products from local wishlist as well
+  const orderedIds = cart.map(i => i.id);
+  wishlist = wishlist.filter(id => !orderedIds.includes(id));
+  localStorage.setItem('aho_wishlist', JSON.stringify(wishlist));
+  updateWishlistUI();
+  renderProducts();
+
+  // Close checkout modal and clear cart
   closeCheckoutModal();
   cart = [];
-  saveCart();
+  localStorage.setItem('aho_cart', JSON.stringify(cart));
   updateCartUI();
+  updateOrdersCountBadge();
 
-  // Redirect to WhatsApp
-  window.open(whatsappUrl, '_blank');
-  showFloatingToast('Order sent to WhatsApp successfully!');
+  // Show rich Order Placed Success Confirmation Modal
+  showOrderPlacedSuccessModal({
+    orderNumber: orderNumber,
+    customerName: name,
+    customerPhone: phone,
+    items: orderedCart,
+    total: total,
+    shippingAddress: `${address}, ${city} - ${pincode}`,
+    paymentMethod: paymentText,
+    whatsappUrl: whatsappUrl
+  });
+}
+
+// Order Placed Success Modal
+function showOrderPlacedSuccessModal(orderData) {
+  let modal = document.getElementById('order-success-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'order-success-modal';
+    modal.className = 'modal';
+    document.body.appendChild(modal);
+  }
+
+  const itemsHtml = orderData.items.map(it => {
+    let img = it.image || 'images/healthy-mix.jpg';
+    if (!img.startsWith('http') && !img.startsWith('../') && !img.startsWith('/')) {
+      img = img;
+    }
+    const weight = it.weight ? `(${it.weight})` : '';
+    const itemTotal = (parseFloat(it.price) || 0) * (parseInt(it.quantity) || 1);
+    return `
+      <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f1f5f9;">
+        <img src="${img}" alt="${it.name}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; background: #f8fafc; border: 1px solid #e2e8f0;" onerror="this.src='images/healthy-mix.jpg'">
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-size: 0.84rem; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${it.name}</div>
+          <div style="font-size: 0.74rem; color: #64748b;">Qty: <strong>${it.quantity || 1}</strong> ${weight}</div>
+        </div>
+        <div style="font-size: 0.86rem; font-weight: 700; color: #2d6a4f;">Rs. ${itemTotal}</div>
+      </div>
+    `;
+  }).join('');
+
+  modal.innerHTML = `
+    <div class="modal-wrapper" style="max-width: 480px; padding: 24px; border-radius: 18px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.18);">
+      <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35); animation: popScale 0.4s ease-out;">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      
+      <h2 style="font-size: 1.45rem; color: #1e293b; margin-bottom: 6px; font-family: 'Playfair Display', serif;">Order Placed Successfully!</h2>
+      <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 16px;">Thank you for ordering with Anuradha Homemade Organics. Your handcrafted order has been received and confirmed.</p>
+      
+      <!-- Order Summary Card -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: left; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed #cbd5e1;">
+          <div>
+            <span style="font-size: 0.75rem; color: #64748b; display: block;">Order Reference:</span>
+            <strong style="font-size: 0.95rem; color: #1e293b;">#${orderData.orderNumber}</strong>
+          </div>
+          <span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700;">🟢 CONFIRMED</span>
+        </div>
+
+        <div style="max-height: 160px; overflow-y: auto; margin-bottom: 8px;">
+          ${itemsHtml}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #e2e8f0;">
+          <div style="font-size: 0.78rem; color: #64748b;"><i class="fa-solid fa-truck"></i> ${orderData.shippingAddress}</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: #2d6a4f;">Rs. ${orderData.total}</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('order-success-modal').classList.remove('open'); const ob = document.getElementById('orders-btn'); if(ob){ ob.click(); } else { window.location.href='customer/dashboard.html?tab=orders'; }" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 10px; font-size: 0.92rem; font-weight: 600; width: 100%; border: none; cursor: pointer;">
+          <i class="fa-solid fa-box-open"></i> View My Placed Orders
+        </button>
+        
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('order-success-modal').classList.remove('open'); if(document.getElementById('drawer-overlay')) document.getElementById('drawer-overlay').classList.remove('active');" style="flex: 1; padding: 10px; font-size: 0.85rem; border-radius: 10px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
+            Continue Shopping
+          </button>
+          <a href="${orderData.whatsappUrl}" target="_blank" class="btn" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; font-size: 0.85rem; border-radius: 10px; background: #25d366; color: #ffffff; text-decoration: none; font-weight: 600;">
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  modal.classList.add('open');
+  const overlay = document.getElementById('drawer-overlay');
+  if (overlay) overlay.classList.add('active');
+  showFloatingToast('🎉 Order placed successfully! Order ID #' + orderData.orderNumber);
 }
 
 // Inject Checkout Modal HTML dynamically
@@ -1419,10 +2133,16 @@ async function handleReviewSubmit(e) {
   localStorage.setItem('aho_reviews', JSON.stringify(reviews));
   renderReviews();
 
-  // Save review in StorageService
+  // Save review in StorageService & Backend API
   if (window.StorageService) {
     window.StorageService.addFeedback({ name, email: '', rating, comment: text });
   }
+
+  fetch(`${BACKEND_API_URL}/api/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, rating, comment: text })
+  }).catch(err => console.log('Stored review locally'));
 
   // Reset form
   e.target.reset();
@@ -1474,6 +2194,12 @@ function handleContactSubmit(e) {
   if (window.StorageService) {
     window.StorageService.addEnquiry({ name, phone, email, subject: 'Website Contact Inquiry', message });
   }
+
+  fetch(`${BACKEND_API_URL}/api/enquiries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, phone, email, message })
+  }).catch(err => console.log('Enquiry stored locally'));
 
   successAlert.textContent = 'Thank you! Your enquiry has been submitted. We will contact you soon.';
   successAlert.style.display = 'block';

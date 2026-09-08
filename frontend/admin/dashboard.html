@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Anuradha Homemade Organics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-leaf"></i>
+            </div>
+            <div class="sidebar-title">
+                <h2>Anuradha</h2>
+                <span>Admin Console</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-tab="overview">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Overview</span>
+            </button>
+            <button class="nav-item" data-tab="products">
+                <i class="fa-solid fa-seedling"></i>
+                <span>Products</span>
+            </button>
+            <button class="nav-item" data-tab="customers">
+                <i class="fa-solid fa-users"></i>
+                <span>Customers</span>
+            </button>
+            <button class="nav-item" data-tab="cart">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span>Active Carts</span>
+            </button>
+            <button class="nav-item" data-tab="orders">
+                <i class="fa-solid fa-box-open"></i>
+                <span>Orders</span>
+            </button>
+            <button class="nav-item" data-tab="wishlist">
+                <i class="fa-solid fa-heart"></i>
+                <span>Wishlist</span>
+            </button>
+            <button class="nav-item" data-tab="addresses">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>Addresses</span>
+            </button>
+            <button class="nav-item" data-tab="enquiries">
+                <i class="fa-solid fa-envelope-open-text"></i>
+                <span>Inquiries</span>
+                <span class="nav-badge" id="badge-enquiries" style="display:none;">0</span>
+            </button>
+            <button class="nav-item" data-tab="reviews">
+                <i class="fa-solid fa-star"></i>
+                <span>Reviews</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="../shop.html" target="_blank" class="btn-store-link">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                <span>View Live Shop</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="mobile-toggle" id="mobile-toggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="header-title">
+                    <h1 id="page-heading">Dashboard Overview</h1>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="admin-user-pill">
+                    <div class="user-avatar" id="admin-avatar">A</div>
+                    <div class="user-info">
+                        <span class="user-name" id="admin-name">Administrator</span>
+                        <span class="user-role">Admin</span>
+                    </div>
+                </div>
+                <button class="btn-logout" id="btn-logout">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Container -->
+        <main class="admin-container">
+            <!-- TAB 1: OVERVIEW -->
+            <div class="tab-pane active" id="tab-overview">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green">
+                            <i class="fa-solid fa-seedling"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-products">0</h3>
+                            <p>Total Products</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-customers">0</h3>
+                            <p>Customers</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#ede9fe; color:#6d28d9;">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-products-sold">0</h3>
+                            <p>Products Sold</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#dcfce7; color:#15803d;">
+                            <i class="fa-solid fa-indian-rupee-sign"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-revenue">Rs. 0</h3>
+                            <p>Total Sales Amount</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-orders">0</h3>
+                            <p>Placed Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#fef3c7; color:#d97706;">
+                            <i class="fa-solid fa-basket-shopping"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-cart">0</h3>
+                            <p>Active Cart Items</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#fce7f3; color:#be185d;">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-wishlist">0</h3>
+                            <p>Wishlist Items</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#ccfbf1; color:#0f766e;">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-addresses">0</h3>
+                            <p>Customer Addresses</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-orange">
+                            <i class="fa-solid fa-envelope-open-text"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-enquiries">0</h3>
+                            <p>New Inquiries</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-yellow">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="stat-reviews">0</h3>
+                            <p>Rating: <span id="stat-rating">5.0</span> ★</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PRODUCTS -->
+            <div class="tab-pane" id="tab-products">
+                <div class="section-toolbar">
+                    <div class="toolbar-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="product-search-input" placeholder="Search products by name or category...">
+                    </div>
+                    <div class="toolbar-actions">
+                        <button class="btn-primary" onclick="openAddProductModal()">
+                            <i class="fa-solid fa-plus"></i> Add Product
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-table">
+                    <div class="table-responsive">
+                        <table id="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: CUSTOMERS -->
+            <div class="tab-pane" id="tab-customers">
+                <div class="card-table">
+                    <div class="card-table-header">
+                        <div>
+                            <h3>Registered Customer Accounts</h3>
+                            <p>Overview of all registered customer profiles</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="customers-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Registered Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: ENQUIRIES -->
+            <div class="tab-pane" id="tab-enquiries">
+                <div class="card-table">
+                    <div class="card-table-header">
+                        <div>
+                            <h3>Customer Inquiries & Messages</h3>
+                            <p>Customer contact submissions and feedback</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="enquiries-table">
+                            <thead>
+                                <tr>
+                                    <th>Sender</th>
+                                    <th>Contact</th>
+                                    <th>Message</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: REVIEWS -->
+            <div class="tab-pane" id="tab-reviews">
+                <div class="card-table">
+                    <div class="card-table-header">
+                        <div>
+                            <h3>Customer Reviews & Feedback</h3>
+                            <p>Product reviews, ratings and shopper feedback</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="reviews-table">
+                            <thead>
+                                <tr>
+                                    <th>Product / Area</th>
+                                    <th>Customer</th>
+                                    <th>Rating</th>
+                                    <th>Comment</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 6: ACTIVE SHOPPING CARTS -->
+            <div class="tab-pane" id="tab-cart">
+                <div class="card-table">
+                    <div class="card-table-header">
+                        <div>
+                            <h3>Active Customer Carts</h3>
+                            <p>Real-time items added to shopping carts by customers & shoppers</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="cart-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Customer</th>
+                                    <th>Variant / Weight</th>
+                                    <th>Unit Price</th>
+                                    <th>Qty</th>
+                                    <th>Subtotal (Rs.)</th>
+                                    <th>Added Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 7: PLACED CUSTOMER ORDERS -->
+            <div class="tab-pane" id="tab-orders">
+                <div class="card-table">
+                    <div class="card-table-header">
+                        <div>
+                            <h3>Customer Orders</h3>
+                            <p>Track orders placed, items purchased, totals, and delivery status</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Customer</th>
+                                    <th>Items Ordered</th>
+                                    <th>Total (Rs.)</th>
+                                    <th>Delivery Address</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 7: WISHLIST -->
+            <div class="tab-pane" id="tab-wishlist">
+                <div class="card-table">
+                    <div class="card-table-header">
+                        <div>
+                            <h3>Customer Wishlist Tracker</h3>
+                            <p>Products saved by shoppers to their wishlist</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="wishlist-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Customer</th>
+                                    <th>Price</th>
+                                    <th>Date Added</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 8: CUSTOMER ADDRESSES -->
+            <div class="tab-pane" id="tab-addresses">
+                <div class="card-table">
+                    <div class="card-table-header">
+                        <div>
+                            <h3>Customer Delivery & Shipping Addresses</h3>
+                            <p>Saved delivery addresses from checkout and customer profiles</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="addresses-table">
+                            <thead>
+                                <tr>
+                                    <th>Recipient</th>
+                                    <th>Contact</th>
+                                    <th>Street Address</th>
+                                    <th>City & State</th>
+                                    <th>Pincode</th>
+                                    <th>Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 🌟 ENHANCED PRODUCT MODAL (Add / Edit) -->
+    <div class="modal-overlay" id="product-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-product-title">Add New Product</h3>
+                <button class="modal-close" onclick="closeProductModal()">✕</button>
+            </div>
+            <form id="product-form">
+                <div class="modal-body">
+                    <input type="hidden" id="form-product-id">
+                    
+                    <div class="product-modal-grid">
+                        <!-- Left Column: Image Upload, Stock & Featured -->
+                        <div class="product-modal-left">
+                            <div class="image-dropzone-card">
+                                <label class="form-label" style="align-self:flex-start;">Product Image *</label>
+                                
+                                <input type="file" id="form-product-file" accept="image/*" style="display:none;">
+                                
+                                <div class="dropzone-preview-container" id="dropzone-area" onclick="document.getElementById('form-product-file').click()" title="Click or Drag Image to Upload">
+                                    <img id="image-preview" src="../images/healthy-mix.jpg" alt="Product Image Preview" class="dropzone-preview-img">
+                                    <div class="dropzone-hover-overlay">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        <span>Click or Drop to Upload</span>
+                                    </div>
+                                </div>
+
+                                <div class="dropzone-actions">
+                                    <button type="button" class="btn-upload-file" onclick="document.getElementById('form-product-file').click()">
+                                        <i class="fa-solid fa-upload"></i> Upload / Browse Image
+                                    </button>
+                                </div>
+
+                                <input type="hidden" id="form-product-image-url" value="images/healthy-mix.jpg">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Inventory Status</label>
+                                <select id="form-product-stock" class="form-control">
+                                    <option value="1">🟢 In Stock (Available)</option>
+                                    <option value="0">🔴 Out of Stock</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Featured on Home Page</label>
+                                <select id="form-product-featured" class="form-control">
+                                    <option value="1">⭐ Yes (Featured)</option>
+                                    <option value="0">Standard</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Details, Ingredients & Sizes -->
+                        <div class="product-modal-right">
+                            <div class="form-group">
+                                <label class="form-label">Product Name *</label>
+                                <input type="text" id="form-product-name" class="form-control" placeholder="e.g., Pure Organic Amla Powder" required>
+                            </div>
+
+                            <div class="form-row-2">
+                                <div class="form-group">
+                                    <label class="form-label">Category *</label>
+                                    <select id="form-product-category" class="form-control" required>
+                                        <option value="amla-products">Amla Products</option>
+                                        <option value="healthy-mixes">Healthy Mixes</option>
+                                        <option value="nuts-powders">Nuts Powders</option>
+                                        <option value="other-organics">Other Organics</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Base Price (Rs.) *</label>
+                                    <input type="number" id="form-product-price" class="form-control" placeholder="100" min="1" step="1" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Short Description</label>
+                                <textarea id="form-product-desc" class="form-control" rows="2" placeholder="Brief description of the organic product..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Ingredients</label>
+                                <input type="text" id="form-product-ingredients" class="form-control" placeholder="e.g., 100% Sun-Dried Organic Gooseberry">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Key Benefits (Comma Separated)</label>
+                                <input type="text" id="form-product-benefits" class="form-control" placeholder="e.g., Rich in Vitamin C, Boosts immunity, Improves skin">
+                            </div>
+
+                            <!-- Sizes & Price Tiers -->
+                            <div class="form-group">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label class="form-label" style="margin:0;">Weight & Price Tiers</label>
+                                    <button type="button" class="btn-tier-add" onclick="addSizeRow()">
+                                        <i class="fa-solid fa-plus"></i> Add Tier
+                                    </button>
+                                </div>
+                                <div class="size-rows-box" id="sizes-container">
+                                    <!-- Size rows injected dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeProductModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" id="btn-save-product">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🌟 ORDER APPROVAL & NOTIFICATION MODAL -->
+    <div class="modal-overlay" id="order-action-modal">
+        <div class="modal-card" style="max-width: 540px;">
+            <div class="modal-header">
+                <h3 id="modal-order-action-title">Order Approval & Notification</h3>
+                <button class="modal-close" onclick="closeOrderActionModal()">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 20px 24px;">
+                <input type="hidden" id="modal-order-id">
+                <input type="hidden" id="modal-order-action-type">
+                
+                <div id="modal-order-summary-box" style="background:#f8fafc; border:1px solid var(--admin-border); border-radius:8px; padding:14px 16px; margin-bottom:16px;">
+                    <!-- Populated dynamically: Order #, Customer, Amount, Items -->
+                </div>
+
+                <!-- Decline Reason (visible only when declining) -->
+                <div id="modal-decline-reason-group" style="display:none; margin-bottom:16px;">
+                    <label class="form-label" style="font-weight:600;">Reason for Declining Order *</label>
+                    <select id="modal-decline-preset" class="form-control" style="margin-bottom:8px;" onchange="handleDeclinePresetChange(this.value)">
+                        <option value="Items currently out of stock">Items currently out of stock</option>
+                        <option value="Delivery address out of serviceable coverage area">Delivery address out of serviceable area</option>
+                        <option value="Duplicate order request">Duplicate order request</option>
+                        <option value="Customer requested cancellation">Customer requested cancellation</option>
+                        <option value="custom">Other (write custom note below)...</option>
+                    </select>
+                    <textarea id="modal-decline-custom-text" class="form-control" rows="2" placeholder="Custom explanation for customer..." style="display:none;"></textarea>
+                </div>
+
+                <!-- Message Preview -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label" style="font-weight:600; display:flex; justify-content:space-between;">
+                        <span>Message to Customer:</span>
+                        <span style="font-size:0.75rem; color:#64748b;">WhatsApp & Email Preview</span>
+                    </label>
+                    <div id="modal-message-preview" style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:12px; font-size:0.85rem; line-height:1.45; white-space:pre-wrap; max-height:140px; overflow-y:auto; color:#334155;"></div>
+                </div>
+
+                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">
+                    Choose how you would like to notify the customer:
+                </p>
+
+                <!-- Dispatch Buttons -->
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button type="button" class="btn-primary" id="btn-notify-whatsapp" onclick="executeOrderNotification('whatsapp')" style="background:#25d366; border-color:#25d366; justify-content:center; padding:12px;">
+                        <i class="fa-brands fa-whatsapp" style="font-size:1.1rem;"></i> <strong>Send via WhatsApp</strong>
+                    </button>
+                    <button type="button" class="btn-primary" id="btn-notify-email" onclick="executeOrderNotification('email')" style="background:#0284c7; border-color:#0284c7; justify-content:center; padding:12px;">
+                        <i class="fa-solid fa-envelope" style="font-size:1.1rem;"></i> <strong>Send via Email</strong>
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="executeOrderNotification('none')" style="justify-content:center; padding:10px;">
+                        Update Status Only (Without Notification)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="admin-toast" id="admin-toast">
+        <i class="fa-solid fa-circle-check" style="color:var(--admin-success);"></i>
+        <span id="toast-text">Action completed successfully</span>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -2,25 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Customer Dashboard - Anuradha Homemade Organics</title>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/auth.css">
 </head>
 <body>
-    <div class="auth-container" style="max-width: 600px;">
+    <div class="auth-container" style="max-width: 540px;">
         <div class="brand-header">
-            <div class="brand-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-            </div>
-            <h1 class="brand-name">Anuradha Homemade Organics</h1>
-            <p class="brand-tagline">Customer Dashboard</p>
+            <a href="../index.html" style="text-decoration: none; color: inherit; display: inline-flex; flex-direction: column; align-items: center;">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <h1 class="brand-name">Anuradha Homemade Organics</h1>
+                <p class="brand-tagline">Customer Profile Dashboard</p>
+            </a>
         </div>
 
         <div class="auth-card welcome-card">
-            <h1>Welcome, <span id="user-display-name">Customer</span>!</h1>
-            <p>Manage your account profile details below:</p>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--primary-color); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; flex-shrink: 0;" id="user-avatar-initial">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div>
+                    <h1 style="font-size: 1.35rem; color: var(--text-dark); margin: 0; line-height: 1.2;">Welcome, <span id="user-display-name">Customer</span>!</h1>
+                    <p style="font-size: 0.82rem; color: var(--text-light); margin: 2px 0 0 0;">Manage your personal account details & preferences</p>
+                </div>
+            </div>
             
             <!-- Success/Error Messages -->
             <div id="alert-box" class="alert">
@@ -28,7 +39,7 @@
             </div>
 
             <!-- Profile Edit Form -->
-            <form id="profile-form" style="text-align: left; margin-bottom: 20px;" novalidate>
+            <form id="profile-form" style="text-align: left; margin-bottom: 16px;" novalidate>
                 <!-- First Name -->
                 <div class="form-group">
                     <label for="profile-first" class="form-label">First Name</label>
@@ -46,6 +57,14 @@
                     </div>
                 </div>
 
+                <!-- Phone Number -->
+                <div class="form-group">
+                    <label for="profile-phone" class="form-label">Phone Number</label>
+                    <div class="input-wrapper">
+                        <input type="tel" id="profile-phone" class="form-input" placeholder="e.g. 9845012345">
+                    </div>
+                </div>
+
                 <!-- Email Address (Read-only / Not Editable) -->
                 <div class="form-group">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -58,21 +77,21 @@
                 </div>
 
                 <!-- Save Button -->
-                <div style="margin-top: 20px;">
+                <div style="margin-top: 18px;">
                     <button type="submit" id="btn-save-profile" class="btn btn-primary" style="width: 100%;">
-                        <span class="btn-text">Save Changes</span>
+                        <span class="btn-text"><i class="fa-solid fa-floppy-disk" style="margin-right: 6px;"></i> Save Changes</span>
                         <span class="spinner"></span>
                     </button>
                 </div>
             </form>
 
             <!-- Navigation & Sign Out Buttons -->
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <a href="../index.html" class="btn btn-secondary" style="flex: 1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-size: 14px; font-weight: 500; border-radius: 12px; height: 44px;">
-                    Back to Store
+            <div class="dashboard-actions" style="display: flex; gap: 10px; margin-top: 12px;">
+                <a href="../index.html" class="btn btn-secondary" style="flex: 1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-size: 14px; font-weight: 600; border-radius: 10px; height: 44px;">
+                    <i class="fa-solid fa-store" style="margin-right: 6px;"></i> Back to Store
                 </a>
-                <button type="button" id="btn-logout" class="btn" style="flex: 1; background-color: var(--accent-color); color: #ffffff; height: 44px;">
-                    <span class="btn-text">Sign Out</span>
+                <button type="button" id="btn-logout" class="btn" style="flex: 1; background-color: var(--accent-color); color: #ffffff; height: 44px; border-radius: 10px;">
+                    <span class="btn-text"><i class="fa-solid fa-arrow-right-from-bracket" style="margin-right: 6px;"></i> Sign Out</span>
                     <span class="spinner"></span>
                 </button>
             </div>

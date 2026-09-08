@@ -101,16 +101,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setLoading(true);
 
-            setTimeout(() => {
-                const res = window.StorageService ? window.StorageService.login(email, password) : { success: false, message: 'Storage service unavailable' };
+            const API_BASE = (window.location.port === '5000' || (window.location.protocol === 'https:' && !window.location.port))
+                ? window.location.origin
+                : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : window.location.origin);
 
+            // 1. Try Backend API login
+            fetch(`${API_BASE}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.token) {
+                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('anuradha_current_user', JSON.stringify(data.user));
+                    if (window.StorageService) {
+                        window.StorageService.setCurrentUser(data.user);
+                    }
+                    showAlert("success", "Login successful. Welcome back!");
+                    setTimeout(() => {
+                        if (data.user.role === 'ADMIN') {
+                            window.location.href = "admin/dashboard.html";
+                        } else {
+                            window.location.href = "index.html";
+                        }
+                    }, 600);
+                } else {
+                    // Fallback to local storage engine
+                    handleLocalFallback(email, password);
+                }
+            })
+            .catch(() => {
+                // Network/offline fallback
+                handleLocalFallback(email, password);
+            });
+
+            function handleLocalFallback(email, password) {
+                const res = window.StorageService ? window.StorageService.login(email, password) : { success: false, message: 'Invalid email or password.' };
                 if (res.success) {
                     showAlert("success", "Login successful. Welcome back!");
                     setTimeout(() => {
-                        const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-                        if (redirectUrl) {
-                            sessionStorage.removeItem('redirectAfterLogin');
-                            window.location.href = redirectUrl;
+                        const currentUser = window.StorageService.getCurrentUser();
+                        if (currentUser && currentUser.role === 'ADMIN') {
+                            window.location.href = "admin/dashboard.html";
                         } else {
                             window.location.href = "index.html";
                         }
@@ -119,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     showAlert("error", res.message || "Invalid email or password.");
                     setLoading(false);
                 }
-            }, 300);
+            }
         });
     }
 
@@ -150,8 +184,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function validateEmail(email) {
+        if (!email) return false;
+        const clean = email.trim().toLowerCase();
+        if (clean === 'admin' || clean === 'admin@anuradhaorganics.com') return true;
         const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-        return re.test(email);
+        return re.test(clean);
     }
 
     function showAlert(type, message) {

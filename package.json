@@ -1,0 +1,30 @@
+{
+  "name": "anuradha-homemade-organics",
+  "version": "1.0.0",
+  "description": "Anuradha Homemade Organics Storefront & Admin Portal",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "postinstall": "cd backend && npm install"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.3.0",
+    "mysql2": "^3.24.4",
+    "sqlite3": "^6.0.1"
+  },
+  "keywords": [
+    "organic",
+    "store",
+    "ecommerce",
+    "nodejs",
+    "mysql"
+  ],
+  "author": "Suvith",
+  "license": "ISC"
+}

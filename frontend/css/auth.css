@@ -465,61 +465,298 @@ body {
 /* Tablet: centre and size the card nicely */
 @media (max-width: 768px) {
     .auth-container {
-        max-width: 420px;
+        max-width: 460px;
+        width: 100%;
     }
     .auth-card {
-        padding: 18px 22px;
+        padding: 22px 24px;
     }
-    /* Ensure inputs have minimum 44px touch target height */
     .form-input,
     .btn {
         min-height: 44px;
+        font-size: 15px;
     }
 }
 
 @media (max-width: 480px) {
     body {
-        padding: 8px;
+        padding: 12px 10px;
+        background-attachment: scroll;
+    }
+    .auth-container {
+        width: 100%;
+        max-width: 100%;
     }
     .auth-card {
-        padding: 15px 20px;
+        padding: 18px 16px;
         border-radius: 16px;
     }
     .brand-header {
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
     .brand-logo {
-        width: 40px;
-        height: 40px;
-        margin-bottom: 4px;
+        width: 44px;
+        height: 44px;
+        margin-bottom: 6px;
     }
     .brand-logo svg {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
     }
     .brand-name {
-        font-size: 16px;
+        font-size: 17px;
     }
-    .form-group {
-        margin-bottom: 8px;
+    .brand-tagline {
+        font-size: 12px;
     }
-    .form-label {
-        font-size: 11px;
+    .welcome-card h1 {
+        font-size: 1.25rem !important;
         margin-bottom: 4px;
     }
+    .welcome-card p {
+        font-size: 0.84rem;
+        margin-bottom: 12px;
+    }
+    .form-group {
+        margin-bottom: 12px;
+    }
+    .form-label {
+        font-size: 12px;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
     .form-input {
-        padding: 8px 12px;
-        font-size: 13px;
+        padding: 10px 14px;
+        font-size: 16px !important; /* Prevents auto-zoom on iOS */
+        min-height: 44px;
+        border-radius: 10px;
     }
     .btn {
-        padding: 8px 16px;
-        font-size: 13px;
+        padding: 11px 16px;
+        font-size: 14px;
+        min-height: 44px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+    .dashboard-actions {
+        flex-direction: column !important;
+        gap: 8px !important;
     }
     .divider {
-        margin: 10px 0;
+        margin: 12px 0;
     }
     .auth-footer {
-        margin-top: 10px;
+        margin-top: 12px;
         font-size: 13px;
     }
+}
+
+/* Customer Dashboard Tabs */
+.customer-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 12px;
+}
+
+.tab-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.tab-btn.active {
+    background: #ffffff;
+    color: var(--primary-color, #2e7d32);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tab-badge {
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.72rem;
+    padding: 1px 7px;
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.tab-btn.active .tab-badge {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Customer Orders Styling */
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.order-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    text-align: left;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.order-card:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+    border-color: #cbd5e1;
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.order-number {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.order-date {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.order-status-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.order-status-confirmed,
+.order-status-pending {
+    background: #fef9c3;
+    color: #854d0e;
+    border: 1px solid #fef08a;
+}
+
+.order-status-shipped {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.order-status-delivered {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.order-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.order-item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.order-item-thumb {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    flex-shrink: 0;
+}
+
+.order-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.order-item-name {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.order-item-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.order-item-price {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+}
+
+.order-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.82rem;
+}
+
+.order-total-price {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--primary-color, #2e7d32);
+}
+
+.order-empty-state {
+    padding: 32px 16px;
+    text-align: center;
+    color: #64748b;
+}
+
+.order-empty-icon {
+    font-size: 2.4rem;
+    color: #94a3b8;
+    margin-bottom: 8px;
 }

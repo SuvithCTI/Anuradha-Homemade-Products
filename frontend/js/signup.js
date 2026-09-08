@@ -141,9 +141,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setLoading(true);
 
-            setTimeout(() => {
-                const res = window.StorageService ? window.StorageService.register({ firstName, lastName, email, password, role: 'CUSTOMER' }) : { success: false, message: 'Storage service unavailable' };
+            const API_BASE = (window.location.port === '5000' || (window.location.protocol === 'https:' && !window.location.port))
+                ? window.location.origin
+                : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : window.location.origin);
 
+            fetch(`${API_BASE}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ firstName, lastName, email, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (window.StorageService) {
+                        window.StorageService.register({ firstName, lastName, email, password, role: 'CUSTOMER' });
+                    }
+                    showAlert("success", "Account created successfully! Redirecting to sign in...");
+                    setTimeout(() => {
+                        window.location.href = "login.html?registered=true";
+                    }, 800);
+                } else {
+                    showAlert("error", data.message || "Registration failed. Please try again.");
+                    setLoading(false);
+                }
+            })
+            .catch(() => {
+                // Offline / LocalStorage fallback
+                const res = window.StorageService ? window.StorageService.register({ firstName, lastName, email, password, role: 'CUSTOMER' }) : { success: false, message: 'Registration failed.' };
                 if (res.success) {
                     showAlert("success", "Account created successfully! Redirecting to sign in...");
                     setTimeout(() => {
@@ -153,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     showAlert("error", res.message || "Registration failed. Please try again.");
                     setLoading(false);
                 }
-            }, 300);
+            });
         });
     }
 
